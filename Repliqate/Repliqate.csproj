@@ -1,0 +1,57 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <PublishAot>true</PublishAot>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <AssemblyVersion>0.1.0</AssemblyVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Content Include="..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="CliWrap" Version="3.9.0" />
+      <PackageReference Include="Docker.DotNet" Version="3.125.15" />
+      <PackageReference Include="DotNetEnv" Version="3.1.1" />
+      <PackageReference Include="Extensions.Hosting" Version="2.3.0" />
+      <PackageReference Include="Quartz" Version="3.15.0" />
+      <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.15.0" />
+      <PackageReference Include="Serilog" Version="4.3.1-dev-02373" />
+      <PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.1-dev-02307" />
+      <PackageReference Include="Serilog.Settings.Configuration" Version="9.0.1-dev-02317" />
+      <PackageReference Include="Serilog.Sinks.Console" Version="6.0.1-dev-00953" />
+      <PackageReference Include="SharpZipLib" Version="1.4.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update=".env">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Include="Resources\restic_0.18.0_linux_amd64.bz2" />
+      <EmbeddedResource Include="Resources\restic_0.18.0_linux_arm.bz2" />
+      <EmbeddedResource Include="Resources\restic_0.18.0_linux_arm64.bz2" />
+      <EmbeddedResource Include="Resources\restic_0.18.0_windows_amd64.zip" />
+      <EmbeddedResource Include="Resources\SHA256SUMS" />
+      <None Remove="Plugins\AgentRestic\Assets\restic_0.18.0_linux_amd64.bz2" />
+      <None Remove="Plugins\AgentRestic\Assets\restic_0.18.0_linux_arm.bz2" />
+      <None Remove="Plugins\AgentRestic\Assets\restic_0.18.0_linux_arm64.bz2" />
+      <None Remove="Plugins\AgentRestic\Assets\restic_0.18.0_windows_amd64.zip" />
+      <None Remove="Plugins\AgentRestic\Assets\SHA256SUMS" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Plugins\AgentRestic\Assets\" />
+    </ItemGroup>
+
+</Project>
