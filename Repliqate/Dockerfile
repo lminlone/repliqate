@@ -12,8 +12,8 @@ RUN apt-get update \
         cmake \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /src
-COPY ["Repliqate.csproj", "./"]
-RUN dotnet restore "Repliqate.csproj"
+COPY ["Repliqate/Repliqate.csproj", "Repliqate/"]
+RUN dotnet restore "Repliqate/Repliqate.csproj"
 COPY . .
 WORKDIR "/src/Repliqate"
 RUN dotnet build "./Repliqate.csproj" -c $BUILD_CONFIGURATION -o /app/build
