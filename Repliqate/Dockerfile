@@ -31,5 +31,4 @@ RUN dotnet publish "./Repliqate.csproj" -c $BUILD_CONFIGURATION -o /app/publish 
 FROM mcr.microsoft.com/dotnet/runtime-deps:9.0
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["./Repliqate"]
-
+ENTRYPOINT ["dotnet", "Repliqate.dll"]
