@@ -53,4 +53,8 @@
       <None Remove="Plugins\AgentRestic\Assets\SHA256SUMS" />
     </ItemGroup>
 
+    <ItemGroup>
+        <TrimmerRootDescriptor Include="ILLink.Descriptors.xml" />
+    </ItemGroup>
+
 </Project>
