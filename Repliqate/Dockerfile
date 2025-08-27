@@ -13,6 +13,7 @@ RUN apt-get update \
         clang \
         zlib1g-dev \
         cmake \
+		bzip2 \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /src
 COPY ["Repliqate/Repliqate.csproj", "Repliqate/"]
@@ -20,6 +21,13 @@ RUN dotnet restore "Repliqate/Repliqate.csproj"
 COPY . .
 WORKDIR "/src/Repliqate"
 RUN dotnet build "./Repliqate.csproj" -c $BUILD_CONFIGURATION -o /app/build /p:Version=$VERSION /p:SourceRevisionId=$GIT_COMMIT
+
+# Extract restic binary
+ARG ARCH=amd64
+RUN mkdir -p /tmp/tools && \
+    cd /tmp/tools && \
+    bunzip2 -c /src/Repliqate/Tools/restic_0.18.0_linux_${ARCH}.bz2 > restic && \
+    chmod +x restic
 
 
 FROM build AS publish
@@ -39,6 +47,12 @@ RUN apt-get update && \
 ENV TZ=UTC
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
+# Copy over 
 WORKDIR /app
 COPY --from=publish /app/publish .
+
+# Create tools directory and copy the extracted restic binary
+RUN mkdir -p /opt/repliqate/tools
+COPY --from=build /tmp/tools/restic /opt/repliqate/tools/
+
 ENTRYPOINT ["dotnet", "Repliqate.dll"]

@@ -45,11 +45,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <EmbeddedResource Include="Resources\restic_0.18.0_linux_amd64.bz2" />
-      <EmbeddedResource Include="Resources\restic_0.18.0_linux_arm.bz2" />
-      <EmbeddedResource Include="Resources\restic_0.18.0_linux_arm64.bz2" />
-      <EmbeddedResource Include="Resources\restic_0.18.0_windows_amd64.zip" />
-      <EmbeddedResource Include="Resources\SHA256SUMS" />
       <None Remove="Plugins\AgentRestic\Assets\restic_0.18.0_linux_amd64.bz2" />
       <None Remove="Plugins\AgentRestic\Assets\restic_0.18.0_linux_arm.bz2" />
       <None Remove="Plugins\AgentRestic\Assets\restic_0.18.0_linux_arm64.bz2" />
