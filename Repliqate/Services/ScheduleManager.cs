@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Text.Json;
 using Docker.DotNet.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -12,6 +13,13 @@ using Repliqate.Structs;
 using Serilog;
 
 namespace Repliqate.Services;
+
+public class BackupJobMetadata
+{
+    public string ContainerId { get; set; }
+    public string EngineUsed { get; set; }
+    public DateTime LastBackupTime { get; set; }
+}
 
 /// <summary>
 /// The actual job itself that is created and called into when the scheduled time ticks over.
@@ -90,12 +98,30 @@ public class BackupJob : IJob
             return;
         }
 
-        await agent.BeginBackup(jobData);
+        bool success = await agent.BeginBackup(jobData);
+        if (!success)
+        {
+            _logger.LogError("Failed to begin backup for container {ContainerName}, exiting job", jobData.ContainerInfo.GetName());
+            return;
+        }
+        
+        _logger.LogInformation("Backup completed for {ContainerName}", jobData.ContainerInfo.GetName());
+        
+        // Once done, write some metadata about it in JSON so we can recognise it later
+        var metadata = new BackupJobMetadata
+        {
+            ContainerId = jobData.ContainerInfo.GetBackupId(),
+            EngineUsed = agent.GetName(),
+            LastBackupTime = DateTime.UtcNow
+        };
+        var serializedMetadata = JsonSerializer.Serialize(metadata);
+        File.WriteAllText(Path.Join(jobData.DestinationRoot, "metadata.json"), serializedMetadata);
     }
 }
 
 public class ScheduleManager : BackgroundService
 {
+    private static readonly string BackupRootPath = "/var/repliqate";
     private static readonly Dictionary<string, string> RepliqateFilter = new(){ { DockerContainer.RepliqateLabelEnabled, "true" } };
 
     private readonly ILogger<ScheduleManager> _logger;
@@ -201,11 +227,13 @@ public class ScheduleManager : BackgroundService
     public async Task ScheduleBackupJobForContainer<T>(ScheduleExpression scheduleExpression, DockerContainer container) where T : IJob
     {
         string jobId = container.ID;
+        string backupRootPath = Path.Join(BackupRootPath, container.GetBackupId());
         
         // Amend the data into the banks for the job to pick up
         _backupJobData[jobId] = new BackupJobData
         {
-            ContainerInfo = container
+            ContainerInfo = container,
+            DestinationRoot = backupRootPath
         };
         
         var cronStr = scheduleExpression.ToCronString();

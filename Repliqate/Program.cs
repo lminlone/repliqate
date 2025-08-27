@@ -22,7 +22,10 @@ class Program
         using IHost host = Host.CreateDefaultBuilder(args)
             .ConfigureAppConfiguration((context, config) =>
             {
-                config.AddEnvironmentVariables();
+                config.SetBasePath(Directory.GetCurrentDirectory())
+                    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                    .AddJsonFile($"appsettings.{context.HostingEnvironment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+                    .AddEnvironmentVariables();
             })
             .ConfigureServices((context, services) =>
             {
@@ -47,14 +50,15 @@ class Program
             })
             .Build();
         
-        // Ensure that the user specified the backup root path
         IConfiguration appConfig = host.Services.GetRequiredService<IConfiguration>();
+        
+        // Ensure that we have a configured backup path
         string backupRootPath = appConfig.GetValue<string>("BACKUP_ROOT_PATH", string.Empty);
-        if (backupRootPath == string.Empty)
-        {
-            Log.Fatal("BACKUP_ROOT_PATH environment variable not set, exiting");
-            return;
-        }
+        Log.Information("Backup root path set to {BackupRootPath}", backupRootPath);
+        // Directory.CreateDirectory(backupRootPath);
+        
+        string dockerSocketPath = appConfig.GetValue<string>("DOCKER_SOCKET_PATH", string.Empty);
+        Log.Information("Docker socket path set to {DockerSocketPath}", dockerSocketPath);
 
         DockerConnector dockerConnector = host.Services.GetRequiredService<DockerConnector>();
         try

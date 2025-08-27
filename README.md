@@ -19,33 +19,51 @@ Currently, Repliqate integrates with Restic as its backup engine, with planned s
 - Access to container runtime socket
 - Storage location for backup data
 
+## shell
 ```shell
 docker run -d \
   --name repliqate \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  -v /path/to/backups:/app/backups \
-  ghcr.io/lminlone/repliqate:latest
+  -v /path/to/backups:/var/repliqate \
+  -v /var/lib/docker/volume:/var/lib/docker/volume \
+  lminlone/repliqate
 ```
 
-- `/var/run/docker.sock`: Required so Repliqate can read labels and control containers.
-- `/app/backups`: Storage for metadata and temporary backup files.
+## Docker Compose
+```yml
+services:
+  repliqate:
+    image: lminlone/repliqate
+    container_name: repliqate
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /path/to/backups:/var/repliqate
+      - /var/lib/docker/volume:/var/lib/docker/volume
+```
 
-# Environment Variables
-| Variable | Description |
-|----------|-------------|
-| `DOCKER_SOCK_PATH` | The Docker URI. Defaults to `/var/run/docker.sock`. Can contain `tcp://` connections if required |
+## Options, Volumes & Environment Variables
+### Volumes
+- `/var/run/docker.sock`: Required so Repliqate can read labels and control containers.
+- `/app/repliqate`: Storage for metadata and backup files.
+- `/var/lib/docker/volume`: Repliqate needs direct access to the volume data to be able to back it up.
+
+### Environment Variable(s)
+| Variable             | Description                                                                                                           | Required | Default                 |
+|----------------------|-----------------------------------------------------------------------------------------------------------------------|----------|-------------------------|
+| `BACKUP_ROOT_PATH`   | The directory in which the backups are placed.                                                                        | No       | `/var/repliqate`        |
+| `DOCKER_SOCK_PATH`   | The Docker URI. Defaults to `/var/run/docker.sock`. Can contain `tcp://` connections if required but not recommended. | No       | `/var/run/docker.sock`  |
 
 # Backup Configuration
-
 Repliqate uses Docker labels for configuration. This keeps backup policies close to the containers and volumes they apply to, eliminating the need for separate configuration files.
 
 ## Container Labels
-| Label | Description | Example                                              |
-|-------|-------------|------------------------------------------------------|
-| `repliqate.enabled` | Enables backup for the container | `true`                                               |
-| `repliqate.method` | Backup engine selection | `restic`                                             |
-| `repliqate.schedule` | Backup schedule (cron format) | `@daily 3am` (see [Scheduling](#scheduling) section) |
-| `repliqate.backup_id` | Unique backup set identifier | `prod-db-01`                                         |
+| Label                  | Description                                                                                                                             | Default    | Example                                              |
+|------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|------------|------------------------------------------------------|
+| `repliqate.enabled`    | Enables backup for the container                                                                                                        | `false`    | `true`                                               |
+| `repliqate.method`     | Backup engine selection                                                                                                                 | `restic`   | `restic`                                             |
+| `repliqate.schedule`   | Backup schedule (cron format)                                                                                                           | `none`     | `@daily 3am` (see [Scheduling](#scheduling) section) |
+| `repliqate.backup_id`  | Unique backup identifier for the container.<br/><br/>**NOTE**: Ensure this is fully unique across all containers on the docker server.  | `none`     | `prod-db-01`                                         |
+| `repliqate.retention`  | Amount of backups to keep.                                                                                                              | `10`       | `3`                                                  |
 
 **Example: Labeling a container**
 ```shell

@@ -35,6 +35,9 @@
       <None Update=".env">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
+      <None Update="appsettings.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
     <ItemGroup>
@@ -48,10 +51,6 @@
       <None Remove="Plugins\AgentRestic\Assets\restic_0.18.0_linux_arm64.bz2" />
       <None Remove="Plugins\AgentRestic\Assets\restic_0.18.0_windows_amd64.zip" />
       <None Remove="Plugins\AgentRestic\Assets\SHA256SUMS" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Plugins\AgentRestic\Assets\" />
     </ItemGroup>
 
 </Project>

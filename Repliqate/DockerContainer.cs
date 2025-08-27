@@ -7,17 +7,19 @@ namespace Repliqate;
 /// </summary>
 public class DockerContainer
 {
-    public const string RepliqateLabelPrefix = "repliqate.";
-    public const string RepliqateLabelBackupId = RepliqateLabelPrefix + "backup_id";
-    public const string RepliqateLabelEngine = RepliqateLabelPrefix + "engine";
-    public const string RepliqateLabelSchedule = RepliqateLabelPrefix + "schedule";
-    public const string RepliqateLabelEnabled = RepliqateLabelPrefix + "enabled";
+    public const string RepliqateLabelPrefix    = "repliqate.";
+    public const string RepliqateLabelBackupId  = RepliqateLabelPrefix + "backup_id";
+    public const string RepliqateLabelEngine    = RepliqateLabelPrefix + "engine";
+    public const string RepliqateLabelSchedule  = RepliqateLabelPrefix + "schedule";
+    public const string RepliqateLabelEnabled   = RepliqateLabelPrefix + "enabled";
+    public const string RepliqateLabelRetention = RepliqateLabelPrefix + "retention";
     
     private readonly ContainerInspectResponse _dockerContainerData;
     
     public string ID => _dockerContainerData.ID;
     public Config Config => _dockerContainerData.Config;
     public string Name => _dockerContainerData.Name;
+    public IList<MountPoint> Mounts => _dockerContainerData.Mounts;
 
     private readonly List<string> _mandatoryLabels = new()
     {
@@ -70,5 +72,14 @@ public class DockerContainer
     public string GetBackupId()
     {
         return _dockerContainerData.Config.Labels[RepliqateLabelBackupId];
+    }
+
+    public int GetRetention()
+    {
+        if (!_dockerContainerData.Config.Labels.TryGetValue(RepliqateLabelRetention, out var retentionStr))
+            return 10;
+        
+        // TODO: Need to figure out what we do when it cannot be parsed
+        return int.Parse(retentionStr);
     }
 }
