@@ -221,7 +221,7 @@ public class DockerConnector : BackgroundService
         return await _client.Containers.StartContainerAsync(containerId, containerStartParams);
     }
 
-    public IList<DockerContainer> GetContainers(Dictionary<string, string> filterLabels = null)
+    public IList<DockerContainer> GetContainers(Dictionary<string, string>? filterLabels = null)
     {
         List<DockerContainer> containers = [];
 
@@ -289,7 +289,7 @@ public class DockerConnector : BackgroundService
         return stackList;
     }
 
-    public void Dispose()
+    public override void Dispose()
     {
         _connectionLock.Dispose();
         _client.Dispose();

@@ -90,7 +90,6 @@ public class ResticCmdResponseSnapshotSumary
 // Cmd: check
 public class ResticCmdResponseCheckSummary : ResticCmdResponse
 {
-    public string MessageType { set; get; }                // Always "summary"
     public long NumErrors { set; get; }                    // Number of errors
     public List<string> BrokenPacks { set; get; }          // Damaged pack IDs
     public bool SuggestRepairIndex { set; get; }           // Run "restic repair index"
