@@ -48,10 +48,11 @@ services:
 - `/var/lib/docker/volume`: Repliqate needs direct access to the volume data to be able to back it up.
 
 ### Environment Variable(s)
-| Variable             | Description                                                                                                           | Required | Default                 |
-|----------------------|-----------------------------------------------------------------------------------------------------------------------|----------|-------------------------|
-| `BACKUP_ROOT_PATH`   | The directory in which the backups are placed.                                                                        | No       | `/var/repliqate`        |
-| `DOCKER_SOCK_PATH`   | The Docker URI. Defaults to `/var/run/docker.sock`. Can contain `tcp://` connections if required but not recommended. | No       | `/var/run/docker.sock`  |
+| Variable           | Description                                                                                                           | Required | Default                |
+|--------------------|-----------------------------------------------------------------------------------------------------------------------|----------|------------------------|
+| `BACKUP_ROOT_PATH` | The directory in which the backups are placed.                                                                        | No       | `/var/repliqate`       |
+| `DOCKER_SOCK_PATH` | The Docker URI. Defaults to `/var/run/docker.sock`. Can contain `tcp://` connections if required but not recommended. | No       | `/var/run/docker.sock` |
+| `TZ`               | Sets the timezone of the container                                                                                    | No       | `UTC`                  |
 
 # Backup Configuration
 Repliqate uses Docker labels for configuration. This keeps backup policies close to the containers and volumes they apply to, eliminating the need for separate configuration files.
