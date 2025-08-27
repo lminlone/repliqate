@@ -10,7 +10,6 @@ namespace Repliqate.Plugins.AgentRestic;
 
 public class AgentRestic : IAgent
 {
-    private const string ToolDirectoryPath = "tools/restic";
     public const string BundledResticVersion = "0.18.0";
 
     private readonly ILogger<AgentRestic> _logger;
@@ -77,7 +76,9 @@ public class AgentRestic : IAgent
 
     public async Task<Restic?> TryExtractBundledAsset()
     {
-        string binaryPath = Path.Combine(ToolDirectoryPath, GetBinName());
+        string toolDirPath = _appConfig.GetValue<string>("RESTIC_EXTRACTION_PATH", "/opt/repliqate/tools");
+        
+        string binaryPath = Path.Combine(toolDirPath, GetBinName());
         
         // Check first to see if we don't already have the tool downloaded
         if (File.Exists(binaryPath))
@@ -93,20 +94,20 @@ public class AgentRestic : IAgent
             throw new FileNotFoundException($"Embedded resource '{resourceName}' not found.");
 
         // Ensure the tool path exists
-        Directory.CreateDirectory(ToolDirectoryPath);
+        Directory.CreateDirectory(toolDirPath);
         
         // Extract the contents
         var zippedExt = GetZippedExtension();
         if (zippedExt == ".bz2")
         {
             await using var bz2Stream = new BZip2InputStream(stream);
-            await using var fileStream = File.Create(ToolDirectoryPath);
+            await using var fileStream = File.Create(toolDirPath);
             await bz2Stream.CopyToAsync(fileStream);
         }
         else if (zippedExt == ".zip")
         {
             using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
-            archive.ExtractToDirectory(ToolDirectoryPath);
+            archive.ExtractToDirectory(toolDirPath);
         }
         
         return new Restic(_loggerFactory.CreateLogger<Restic>(), binaryPath);
