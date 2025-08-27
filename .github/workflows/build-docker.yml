@@ -24,13 +24,20 @@ jobs:
       - name: Set Docker image tag
         id: vars
         run: |
+          GIT_COMMIT=$(git rev-parse --short HEAD)
+          echo "GIT_COMMIT=$GIT_COMMIT" >> $GITHUB_OUTPUT
+          
           if [[ "${GITHUB_EVENT_NAME}" == "release" ]]; then
             echo "TAG=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+            echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
           elif [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
             echo "TAG=manual" >> $GITHUB_OUTPUT
+            echo "VERSION=0.0.0-manual-$GIT_COMMIT" >> $GITHUB_OUTPUT
           else
             echo "TAG=latest" >> $GITHUB_OUTPUT
+            echo "VERSION=0.0.0-dev-$GIT_COMMIT" >> $GITHUB_OUTPUT
           fi
+
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -39,3 +46,7 @@ jobs:
           file: Repliqate/Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/repliqate:${{ steps.vars.outputs.TAG }}
+          build-args: |
+            VERSION=${{ steps.vars.outputs.VERSION }}
+            GIT_COMMIT=${{ steps.vars.outputs.GIT_COMMIT }}
+

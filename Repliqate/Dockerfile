@@ -16,11 +16,12 @@ COPY ["Repliqate/Repliqate.csproj", "Repliqate/"]
 RUN dotnet restore "Repliqate/Repliqate.csproj"
 COPY . .
 WORKDIR "/src/Repliqate"
-RUN dotnet build "./Repliqate.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet build "./Repliqate.csproj" -c $BUILD_CONFIGURATION -o /app/build /p:Version=$VERSION /p:SourceRevisionId=$GIT_COMMIT
+
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./Repliqate.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./Repliqate.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false /p:Version=$VERSION /p:SourceRevisionId=$GIT_COMMIT
 
 FROM mcr.microsoft.com/dotnet/runtime-deps:9.0
 WORKDIR /app
