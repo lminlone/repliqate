@@ -5,7 +5,7 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <PublishAot>true</PublishAot>
+        <PublishAot>false</PublishAot>
         <InvariantGlobalization>true</InvariantGlobalization>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
         <AssemblyVersion>0.1.0</AssemblyVersion>
@@ -51,10 +51,6 @@
       <None Remove="Plugins\AgentRestic\Assets\restic_0.18.0_linux_arm64.bz2" />
       <None Remove="Plugins\AgentRestic\Assets\restic_0.18.0_windows_amd64.zip" />
       <None Remove="Plugins\AgentRestic\Assets\SHA256SUMS" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <TrimmerRootDescriptor Include="ILLink.Descriptors.xml" />
     </ItemGroup>
 
 </Project>
