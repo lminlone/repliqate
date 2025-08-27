@@ -4,6 +4,9 @@ WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
+ARG VERSION=1.0.0
+ARG GIT_COMMIT=unknown
+
 # Install clang and other required dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -21,6 +24,8 @@ RUN dotnet build "./Repliqate.csproj" -c $BUILD_CONFIGURATION -o /app/build /p:V
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
+ARG VERSION=1.0.0
+ARG GIT_COMMIT=unknown
 RUN dotnet publish "./Repliqate.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false /p:Version=$VERSION /p:SourceRevisionId=$GIT_COMMIT
 
 FROM mcr.microsoft.com/dotnet/runtime-deps:9.0

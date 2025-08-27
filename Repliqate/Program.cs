@@ -17,7 +17,19 @@ class Program
             .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
             .CreateBootstrapLogger();
         
-        Log.Information("Starting Repliqate v{Version}", Assembly.GetExecutingAssembly().GetName().Version.ToString(3));
+        // Get version and git commit info
+        var assembly = Assembly.GetExecutingAssembly();
+        var version = assembly.GetName().Version?.ToString(3) ?? "unknown";
+        var gitCommit = "unknown";
+        
+        // Extract git commit from informational version if present
+        var infoVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        if (infoVersion != null && infoVersion.Contains('+'))
+        {
+            gitCommit = infoVersion.Split('+')[1];
+        }
+        
+        Log.Information("Starting Repliqate v{Version} (Commit: {GitCommit})", version, gitCommit);
         
         using IHost host = Host.CreateDefaultBuilder(args)
             .ConfigureAppConfiguration((context, config) =>

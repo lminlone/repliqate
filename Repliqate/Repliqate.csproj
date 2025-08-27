@@ -57,10 +57,4 @@
       <None Remove="Plugins\AgentRestic\Assets\SHA256SUMS" />
     </ItemGroup>
 
-    <Target Name="SetSourceRevisionId" BeforeTargets="CoreCompile">
-        <Exec Command="git rev-parse HEAD" IgnoreExitCode="false" StandardOutputImportance="low">
-            <Output TaskParameter="ConsoleOutput" PropertyName="SourceRevisionId" />
-        </Exec>
-    </Target>
-
 </Project>
