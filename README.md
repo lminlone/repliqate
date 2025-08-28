@@ -1,5 +1,17 @@
 ﻿<p align="center">
-  <img src="Docs/heading.png">
+    <img src="Docs/heading.png">
+</p>
+
+<p align="center">
+    <img src="https://img.shields.io/github/license/lminlone/repliqate">
+    <img src="https://img.shields.io/github/v/release/lminlone/repliqate?include_prereleases">
+</p>
+
+<p align="center">
+    <a href="https://hub.docker.com/r/lminlone/repliqate">
+        <img src="https://img.shields.io/docker/pulls/lminlone/repliqate">
+    </a>
+    <img src="https://img.shields.io/docker/image-size/lminlone/repliqate">
 </p>
 
 Repliqate is a modular backup solution designed for Docker environments. It safely handles containerized workloads by stopping and restarting containers during backup operations, ensuring data consistency.
@@ -8,9 +20,12 @@ Currently, Repliqate integrates with Restic as its backup engine, with planned s
 
 # Features
 
-- **Label-based configuration**: Configure backup rules using Docker container and volume labels, keeping configuration alongside the resources it protects.
+- **Label-based configuration**: Configure backup rules using Docker container **and volume** labels, keeping configuration alongside the resources it protects.
 - **Self-hostable**: Deployable as a Docker container for integration into existing infrastructure.
-- **Container-safe backups**: Automatically stops and restarts containers around backup operations.
+- **Container-safe**: Automatically stops and restarts containers around backup operations.
+- **Versioned backups**: Maintains version history of backups with configurable retention policies, allowing recovery from multiple points in time.
+- **Intuitive scheduling**: Simple, human-readable schedule configuration with convenient shortcuts like `@daily 3am` or `@weekly 4am Mon`, while still supporting traditional cron expressions for advanced use cases.
+
 
 # Running Repliqate
 ## Prerequisites
