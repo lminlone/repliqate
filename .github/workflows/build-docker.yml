@@ -28,8 +28,10 @@ jobs:
           echo "GIT_COMMIT=$GIT_COMMIT" >> $GITHUB_OUTPUT
           
           if [[ "${GITHUB_EVENT_NAME}" == "release" ]]; then
+            # Strip 'v' prefix from version if present
+            VERSION=${GITHUB_REF_NAME#v}
             echo "TAG=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
-            echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+            echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
           elif [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
             echo "TAG=manual" >> $GITHUB_OUTPUT
             echo "VERSION=0.0.0-manual-$GIT_COMMIT" >> $GITHUB_OUTPUT
