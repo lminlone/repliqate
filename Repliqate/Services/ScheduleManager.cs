@@ -90,6 +90,8 @@ public class BackupJob : IJob
 
     private async Task RunBackupTask(IJobExecutionContext context, BackupJobData jobData)
     {
+        _logger.LogInformation("Beginning backup for {ContainerName}", jobData.ContainerInfo.GetName());
+        
         string engine = jobData.ContainerInfo.GetRepliqateEngine();
         IAgent? agent = _agentProvider.GetAgentForMethod(engine);
         if (agent == null)
@@ -105,9 +107,9 @@ public class BackupJob : IJob
             return;
         }
         
-        _logger.LogInformation("Backup completed for {ContainerName}", jobData.ContainerInfo.GetName());
-        
         // Once done, write some metadata about it in JSON so we can recognise it later
+        string backupMetadataPath = Path.Join(jobData.DestinationRoot, "metadata.json");
+        _logger.LogInformation("Writing backup metadata to {Path}", backupMetadataPath);
         var metadata = new BackupJobMetadata
         {
             ContainerId = jobData.ContainerInfo.GetBackupId(),
@@ -115,7 +117,9 @@ public class BackupJob : IJob
             LastBackupTime = DateTime.UtcNow
         };
         var serializedMetadata = JsonSerializer.Serialize(metadata);
-        File.WriteAllText(Path.Join(jobData.DestinationRoot, "metadata.json"), serializedMetadata);
+        await File.WriteAllTextAsync(backupMetadataPath, serializedMetadata);
+        
+        _logger.LogInformation("Backup completed for {ContainerName}", jobData.ContainerInfo.GetName());
     }
 }
 

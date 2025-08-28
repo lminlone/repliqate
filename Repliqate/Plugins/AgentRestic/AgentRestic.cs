@@ -39,8 +39,7 @@ public class AgentRestic : IAgent
             return false;
         }
 
-        string backupPath = Path.Join(jobData.DestinationRoot, jobData.ContainerInfo.GetBackupId());
-        Directory.CreateDirectory(backupPath);
+        Directory.CreateDirectory(jobData.DestinationRoot);
         
         // Then backup each volume
         foreach (var mount in jobData.ContainerInfo.Mounts)
@@ -55,22 +54,20 @@ public class AgentRestic : IAgent
                 continue;
             }
             
-            string backupDest = Path.Join(backupPath, mount.Name);
+            string backupDest = Path.Join(jobData.DestinationRoot, "volumes", mount.Name);
             Directory.CreateDirectory(backupDest);
             
-            string repoPath = Path.Join(backupDest, "repo");
-
             // Ensure that the repo exists first
-            await restic.EnsureRepoExists(repoPath);
+            await restic.EnsureRepoExists(backupDest);
             
             _logger.LogInformation("Backing up volume {VolumePath}", mount.Name);
-            var result = await restic.BackupFiles(mount.Source, repoPath, msg =>
+            var result = await restic.BackupFiles(mount.Source, backupDest, msg =>
             {
-                
+                _logger.LogInformation("Progress: {ProgressMsg}%", msg.PercentDone);
             });
-            _logger.LogInformation("Backup done. New files: {FilesNew} | New dirs: {DirsNew}", result.FilesNew, result.DirsNew);
+            _logger.LogInformation("Backup done. New files: {FilesNew} | New dirs: {DirsNew} | Total files: {TotalFiles}", result.FilesNew, result.DirsNew, result.TotalFilesProcessed);
 
-            
+            return true;
         }
         
         return false;
