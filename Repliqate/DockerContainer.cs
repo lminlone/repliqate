@@ -7,12 +7,13 @@ namespace Repliqate;
 /// </summary>
 public class DockerContainer
 {
-    public const string RepliqateLabelPrefix    = "repliqate.";
-    public const string RepliqateLabelBackupId  = RepliqateLabelPrefix + "backup_id";
-    public const string RepliqateLabelEngine    = RepliqateLabelPrefix + "engine";
-    public const string RepliqateLabelSchedule  = RepliqateLabelPrefix + "schedule";
-    public const string RepliqateLabelEnabled   = RepliqateLabelPrefix + "enabled";
-    public const string RepliqateLabelRetention = RepliqateLabelPrefix + "retention";
+    public const string RepliqateLabelPrefix     = "repliqate.";
+    public const string RepliqateLabelBackupId   = RepliqateLabelPrefix + "backup_id";
+    public const string RepliqateLabelEngine     = RepliqateLabelPrefix + "engine";
+    public const string RepliqateLabelSchedule   = RepliqateLabelPrefix + "schedule";
+    public const string RepliqateLabelEnabled    = RepliqateLabelPrefix + "enabled";
+    public const string RepliqateLabelRetention  = RepliqateLabelPrefix + "retention";
+    public const string RepliqateLabelExclVolume = RepliqateLabelPrefix + "excl_volumes";
     
     private readonly ContainerInspectResponse _dockerContainerData;
     
@@ -81,5 +82,13 @@ public class DockerContainer
         
         // TODO: Need to figure out what we do when it cannot be parsed
         return int.Parse(retentionStr);
+    }
+    
+    public List<string> GetExcludedVolumes()
+    {
+        if (!_dockerContainerData.Config.Labels.TryGetValue(RepliqateLabelExclVolume, out var exclVolumesStr))
+            return new();
+        
+        return exclVolumesStr.Split(',').ToList();
     }
 }

@@ -56,11 +56,31 @@ services:
       - /var/lib/docker/volume:/var/lib/docker/volume
 ```
 
+Or, if you wish to backup to an NFS:
+```yml
+services:
+  repliqate:
+    image: lminlone/repliqate
+    container_name: repliqate
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - backups:/var/repliqate
+      - /var/lib/docker/volume:/var/lib/docker/volume
+
+volumes:
+  backups:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=your-nas-hostname-or-ip,nolock,soft,rw
+      device: :/volume/backups
+```
+
 ## Options, Volumes & Environment Variables
 ### Volumes
 - `/var/run/docker.sock`: Required so Repliqate can read labels and control containers.
 - `/app/repliqate`: Storage for metadata and backup files.
-- `/var/lib/docker/volume`: Repliqate needs direct access to the volume data to be able to back it up.
+- `/var/lib/docker/volume`: Repliqate needs direct access to the volume data to be able to back it up. It's possible to give individual access to each volume directly to repliqate without exposing all your volumes: eg `/var/lib/docker/volume/my_volume_name:/var/lib/docker/volume/my_volume_name`. You'd need to do this per volume if this is the case. 
 
 ### Environment Variable(s)
 | Variable           | Description                                                                                                           | Required | Default                |
@@ -73,13 +93,17 @@ services:
 Repliqate uses Docker labels for configuration. This keeps backup policies close to the containers and volumes they apply to, eliminating the need for separate configuration files.
 
 ## Container Labels
-| Label                  | Description                                                                                                                             | Default    | Example                                              |
-|------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|------------|------------------------------------------------------|
-| `repliqate.enabled`    | Enables backup for the container                                                                                                        | `false`    | `true`                                               |
-| `repliqate.method`     | Backup engine selection                                                                                                                 | `restic`   | `restic`                                             |
-| `repliqate.schedule`   | Backup schedule (cron format)                                                                                                           | `none`     | `@daily 3am` (see [Scheduling](#scheduling) section) |
-| `repliqate.backup_id`  | Unique backup identifier for the container.<br/><br/>**NOTE**: Ensure this is fully unique across all containers on the docker server.  | `none`     | `prod-db-01`                                         |
-| `repliqate.retention`  | Amount of backups to keep.                                                                                                              | `10`       | `3`                                                  |
+| Label                      | Description                                                                                                                            | Default  | Example                                              |
+|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------|----------|------------------------------------------------------|
+| `repliqate.enabled`        | Enables backup for the container                                                                                                       | `false`  | `true`                                               |
+| `repliqate.method`         | Backup engine selection                                                                                                                | `restic` | `restic`                                             |
+| `repliqate.schedule`       | Backup schedule (cron format)                                                                                                          | `none`   | `@daily 3am` (see [Scheduling](#scheduling) section) |
+| `repliqate.backup_id`      | Unique backup identifier for the container.<br/><br/>**NOTE**: Ensure this is fully unique across all containers on the docker server. | `none`   | `prod-db-01`                                         |
+| `repliqate.retention`      | Amount of backups to keep.                                                                                                             | `10`     | `3`                                                  |
+| `repliqate.excl_volumes`   | A comma separated list of all volumes you wish to be excluded from being backed up. List each volume by its volume's name.             |          | `volume_1,volume_2`                                  |
+
+### Notes
+`repliqate.excl_volumes`: keep in mind that if you're putting together a stack with volumes that are going to be automatically be created, you'll have to prefix your volume names with the stack name (to guarantee you get the name right, deploy the stack first then check the names out in the volumes list).
 
 **Example: Labeling a container**
 ```shell

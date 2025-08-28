@@ -40,12 +40,22 @@ public class AgentRestic : IAgent
         }
 
         Directory.CreateDirectory(jobData.DestinationRoot);
+
+        var excludeVolumeNames = jobData.ContainerInfo.GetExcludedVolumes();
         
         // Then backup each volume
         foreach (var mount in jobData.ContainerInfo.Mounts)
         {
+            // Not a volume (obvious)
             if (mount.Type != "volume")
                 continue;
+            
+            // Name was part of the exclusions
+            if (excludeVolumeNames.Contains(mount.Name))
+            {
+                _logger.LogInformation("Volume {VolumeName} ({VolumePath}) excluded from backup via container label config, skipping", mount.Name, mount.Source);
+                continue;
+            }
             
             // Ensure that the mount source path exists first and we have access to it, otherwise we can't back it up
             if (!Directory.Exists(mount.Source))
