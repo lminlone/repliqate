@@ -30,13 +30,13 @@ jobs:
           if [[ "${GITHUB_EVENT_NAME}" == "release" ]]; then
             # Strip 'v' prefix from version if present
             VERSION=${GITHUB_REF_NAME#v}
-            echo "TAG=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+            echo "TAG=${GITHUB_REF_NAME},latest" >> $GITHUB_OUTPUT
             echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
           elif [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
             echo "TAG=manual" >> $GITHUB_OUTPUT
             echo "VERSION=0.0.0-manual-$GIT_COMMIT" >> $GITHUB_OUTPUT
           else
-            echo "TAG=latest" >> $GITHUB_OUTPUT
+            echo "TAG=cutting-edge" >> $GITHUB_OUTPUT
             echo "VERSION=0.0.0-dev-$GIT_COMMIT" >> $GITHUB_OUTPUT
           fi
 
