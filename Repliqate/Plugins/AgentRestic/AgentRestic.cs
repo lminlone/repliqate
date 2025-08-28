@@ -76,17 +76,7 @@ public class AgentRestic : IAgent
 
     public async Task<Restic?> LoadRestic()
     {
-        string toolDirPath = _appConfig.GetValue<string>("RESTIC_EXTRACTION_PATH", "/opt/repliqate/tools");
-        
-        string binaryPath = Path.Combine(toolDirPath, GetBinName());
-        
-        // Check first to see if we don't already have the tool downloaded
-        if (File.Exists(binaryPath))
-        {
-            return new Restic(_loggerFactory.CreateLogger<Restic>(), binaryPath);
-        }
-        
-        return null;
+        return new Restic(_loggerFactory.CreateLogger<Restic>(), "restic");
     }
 
     private string GetZippedAssetName()
