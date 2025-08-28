@@ -144,6 +144,7 @@ public class Restic
 {
     private ILogger<Restic> _logger;
     private string _binPath;
+    private string _cwd;
 
     public event Action<ResticCmdResponse> OnDataResponse;
     
@@ -151,6 +152,8 @@ public class Restic
     {
         _logger = logger;
         _binPath = binPath;
+        
+        _cwd = Directory.GetCurrentDirectory();
     }
     
     public async Task<string> GetVersion()
@@ -243,10 +246,14 @@ public class Restic
             { "status", typeof(ResticCmdResponseBackupStatus) },
             { "summary", typeof(ResticCmdResponseBackupSummary) },
         };
+        
+        // Need to ensure we operate within the root directory of the backup path, otherwise the repo will inherit
+        // parent paths (I don't make the rules).
+        _cwd = from;
 
         ResticCmdResponseBackupSummary finalSummary = new();
 
-        await Execute(["-r", repoPath, "backup", from, "--insecure-no-password"], parseDict, msg =>
+        await Execute(["-r", repoPath, "backup", ".", "--insecure-no-password"], parseDict, msg =>
         {
             if (msg is ResticCmdResponseBackupStatus status)
             {
@@ -290,7 +297,8 @@ public class Restic
     {
         var argsWithJson = new[] { "--json" }.Concat(args).ToArray();
         var result = Cli.Wrap(_binPath).WithArguments(argsWithJson)
-            .WithValidation(CommandResultValidation.None);
+            .WithValidation(CommandResultValidation.None)
+            .WithWorkingDirectory(_cwd);
         
         await foreach (var cmdEvent in result.ListenAsync())
         {

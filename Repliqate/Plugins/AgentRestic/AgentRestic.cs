@@ -69,6 +69,8 @@ public class AgentRestic : IAgent
                 
             });
             _logger.LogInformation("Backup done. New files: {FilesNew} | New dirs: {DirsNew}", result.FilesNew, result.DirsNew);
+
+            
         }
         
         return false;
