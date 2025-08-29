@@ -1,11 +1,8 @@
-﻿name: Docker Image CI
+name: Docker Image CI - Branch
 
 on:
   push:
     branches: [ "master" ]
-  workflow_dispatch:
-  release:
-    types: [published]
     
 jobs:
   build:
@@ -27,19 +24,8 @@ jobs:
           GIT_COMMIT=$(git rev-parse --short HEAD)
           echo "GIT_COMMIT=$GIT_COMMIT" >> $GITHUB_OUTPUT
           
-          if [[ "${GITHUB_EVENT_NAME}" == "release" ]]; then
-            # Strip 'v' prefix from version if present
-            VERSION=${GITHUB_REF_NAME#v}
-            echo "TAG=${GITHUB_REF_NAME},latest" >> $GITHUB_OUTPUT
-            echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
-          elif [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
-            echo "TAG=manual" >> $GITHUB_OUTPUT
-            echo "VERSION=0.0.0-manual-$GIT_COMMIT" >> $GITHUB_OUTPUT
-          else
-            echo "TAG=cutting-edge" >> $GITHUB_OUTPUT
-            echo "VERSION=0.0.0-dev-$GIT_COMMIT" >> $GITHUB_OUTPUT
-          fi
-
+          echo "TAG=cutting-edge" >> $GITHUB_OUTPUT
+          echo "VERSION=0.0.0-dev-$GIT_COMMIT" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -51,4 +37,3 @@ jobs:
           build-args: |
             VERSION=${{ steps.vars.outputs.VERSION }}
             GIT_COMMIT=${{ steps.vars.outputs.GIT_COMMIT }}
-

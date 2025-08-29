@@ -1,0 +1,43 @@
+name: Docker Image CI - Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set Docker image tag
+        id: vars
+        run: |
+          GIT_COMMIT=$(git rev-parse --short HEAD)
+          echo "GIT_COMMIT=$GIT_COMMIT" >> $GITHUB_OUTPUT
+          
+          # Strip 'v' prefix from version if present
+          VERSION=${GITHUB_REF_NAME#v}
+          echo "TAG=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Repliqate/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/repliqate:${{ steps.vars.outputs.TAG }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/repliqate:latest
+          build-args: |
+            VERSION=${{ steps.vars.outputs.VERSION }}
+            GIT_COMMIT=${{ steps.vars.outputs.GIT_COMMIT }}
