@@ -93,14 +93,14 @@ volumes:
 Repliqate uses Docker labels for configuration. This keeps backup policies close to the containers and volumes they apply to, eliminating the need for separate configuration files.
 
 ## Container Labels
-| Label                      | Description                                                                                                                            | Default  | Example                                              |
-|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------|----------|------------------------------------------------------|
-| `repliqate.enabled`        | Enables backup for the container                                                                                                       | `false`  | `true`                                               |
-| `repliqate.method`         | Backup engine selection                                                                                                                | `restic` | `restic`                                             |
-| `repliqate.schedule`       | Backup schedule (cron format)                                                                                                          | `none`   | `@daily 3am` (see [Scheduling](#scheduling) section) |
-| `repliqate.backup_id`      | Unique backup identifier for the container.<br/><br/>**NOTE**: Ensure this is fully unique across all containers on the docker server. | `none`   | `prod-db-01`                                         |
-| `repliqate.retention`      | Amount of backups to keep.                                                                                                             | `10`     | `3`                                                  |
-| `repliqate.excl_volumes`   | A comma separated list of all volumes you wish to be excluded from being backed up. List each volume by its volume's name.             |          | `volume_1,volume_2`                                  |
+| Label                    | Description                                                                                                                            | Default  | Example                                              |
+|--------------------------|----------------------------------------------------------------------------------------------------------------------------------------|----------|------------------------------------------------------|
+| `repliqate.enabled`      | Enables backup for the container                                                                                                       | `false`  | `true`                                               |
+| `repliqate.engine`       | Backup engine selection                                                                                                                | `restic` | `restic`                                             |
+| `repliqate.schedule`     | Backup schedule (cron format)                                                                                                          | `none`   | `@daily 3am` (see [Scheduling](#scheduling) section) |
+| `repliqate.backup_id`    | Unique backup identifier for the container.<br/><br/>**NOTE**: Ensure this is fully unique across all containers on the docker server. | `none`   | `prod-db-01`                                         |
+| `repliqate.retention`    | Amount of backups to keep.                                                                                                             | `10`     | `3`                                                  |
+| `repliqate.excl_volumes` | A comma separated list of all volumes you wish to be excluded from being backed up. List each volume by its volume's name.             |          | `volume_1,volume_2`                                  |
 
 ### Notes
 `repliqate.excl_volumes`: keep in mind that if you're putting together a stack with volumes that are going to be automatically be created, you'll have to prefix your volume names with the stack name (to guarantee you get the name right, deploy the stack first then check the names out in the volumes list).
@@ -109,7 +109,7 @@ Repliqate uses Docker labels for configuration. This keeps backup policies close
 ```shell
 docker run -d \
   --label repliqate.enabled=true \
-  --label repliqate.method=restic \
+  --label repliqate.engine=restic \
   --label repliqate.schedule="@daily 3am" \
   --label repliqate.backup_id=my_app_01 \
   --name my_app \
