@@ -54,7 +54,7 @@ public class TestRestic
         var agentRestic = agentProvider.GetAgentForMethod("restic") as AgentRestic;
         Assert.That(agentRestic, Is.Not.Null);
         
-        _restic = await agentRestic.TryExtractBundledAsset();
+        _restic = await agentRestic.LoadRestic();
         
         Assert.That(_restic, Is.Not.Null);
     }

@@ -35,20 +35,37 @@ public class AgentRestic : IAgent
         Restic? restic = await LoadRestic();
         if (restic == null)
         {
-            _logger.LogError("Failed to extract bundled asset for Restic");
+            _logger.LogError("Tried to load restic but failed. Error unknown");
             return false;
         }
 
-        Directory.CreateDirectory(jobData.DestinationRoot);
+        try
+        {
+            Directory.CreateDirectory(jobData.DestinationRoot);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Failed to create destination directory {DestinationRoot}", jobData.DestinationRoot);
+            return false;
+        }
 
         var excludeVolumeNames = jobData.ContainerInfo.GetExcludedVolumes();
+
+        if (jobData.ContainerInfo.Mounts.Count == 0)
+        {
+            _logger.LogInformation("No mounts found for container {ContainerName}, skipping", jobData.ContainerInfo.GetName());
+            return false;
+        }
         
         // Then backup each volume
         foreach (var mount in jobData.ContainerInfo.Mounts)
         {
             // Not a volume (obvious)
             if (mount.Type != "volume")
+            {
+                _logger.LogInformation("Mount {Name} ({Path}) is not a volume but instead a {Type}, skipping", mount.Name, mount.Source, mount.Type);
                 continue;
+            }
             
             // Name was part of the exclusions
             if (excludeVolumeNames.Contains(mount.Name))
