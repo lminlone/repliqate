@@ -19,49 +19,49 @@ public struct CliOutput
 
 public class ResticCmdResponse
 {
-    public string MessageType { get; set; }
+    public string MessageType { get; set; } = "";
 }
 
 public class ResticCmdResponseError : ResticCmdResponse
 {
     public int Code { get; set; }
-    public string Message { get; set; }
+    public string Message { get; set; } = "";
 }
 
 // Cmd: init
 public class ResticCmdResponseInitialized : ResticCmdResponse
 {
-    public string Id { get; set; }
-    public string Repository { get; set; }
+    public string Id { get; set; } = "";
+    public string Repository { get; set; } = "";
 }
 
 // Cmd: version
 public class ResticCmdResponseVersion : ResticCmdResponse
 {
-    public string Version { get; set; }       // restic version
-    public string GoVersion { get; set; }     // Go compile version
-    public string GoOs { get; set; }          // Go OS
-    public string GoArch { get; set; }        // Go architecture
+    public string Version { get; set; } = "";       // restic version
+    public string GoVersion { get; set; } = "";     // Go compile version
+    public string GoOs { get; set; } = "";          // Go OS
+    public string GoArch { get; set; } = "";        // Go architecture
 }
 
 // Cmd: ls
 public class ResticCmdResponseSnapshot : ResticCmdResponse
 {
-    public string StructType { get; set; }                         // Always "snapshot" (deprecated)
-    public DateTime Time { get; set; }                             // Timestamp of when the backup was started
-    public string Parent { get; set; }                             // ID of the parent snapshot
-    public string Tree { get; set; }                               // ID of the root tree blob
-    public List<string> Paths { get; set; }                        // List of paths included in the backup
-    public string Hostname { get; set; }                           // Hostname of the backed up machine
-    public string Username { get; set; }                           // Username the backup command was run as
-    public int Uid { get; set; }                                   // ID of owner
-    public int Gid { get; set; }                                   // ID of group
-    public List<string> Excludes { get; set; }                     // Paths/globs excluded from the backup
-    public List<string> Tags { get; set; }                         // Tags for the snapshot
-    public string ProgramVersion { get; set; }                     // restic version used
-    public ResticCmdResponseSnapshotSumary Summary { get; set; }   // Snapshot statistics
-    public string Id { get; set; }                                 // Snapshot ID
-    public string ShortId { get; set; }                            // Short form of snapshot ID
+    public string StructType { get; set; } = "";                            // Always "snapshot" (deprecated)
+    public DateTime Time { get; set; }                                      // Timestamp of when the backup was started
+    public string Parent { get; set; } = "";                                // ID of the parent snapshot
+    public string Tree { get; set; } = "";                                  // ID of the root tree blob
+    public List<string> Paths { get; set; } = new();                        // List of paths included in the backup
+    public string Hostname { get; set; } = "";                              // Hostname of the backed up machine
+    public string Username { get; set; } = "";                              // Username the backup command was run as
+    public int Uid { get; set; }                                            // ID of owner
+    public int Gid { get; set; }                                            // ID of group
+    public List<string> Excludes { get; set; } = new();                     // Paths/globs excluded from the backup
+    public List<string> Tags { get; set; } = new();                         // Tags for the snapshot
+    public string ProgramVersion { get; set; } = "";                        // restic version used
+    public ResticCmdResponseSnapshotSumary Summary { get; set; } = new();   // Snapshot statistics
+    public string Id { get; set; } = "";                                    // Snapshot ID
+    public string ShortId { get; set; } = "";                               // Short form of snapshot ID
 }
 
 public class ResticCmdResponseSnapshotSumary
@@ -90,28 +90,28 @@ public class ResticCmdResponseSnapshotSumary
 // Cmd: check
 public class ResticCmdResponseCheckSummary : ResticCmdResponse
 {
-    public long NumErrors { set; get; }                    // Number of errors
-    public List<string> BrokenPacks { set; get; }          // Damaged pack IDs
-    public bool SuggestRepairIndex { set; get; }           // Run "restic repair index"
-    public bool SuggestPrune { set; get; }                 // Run "restic prune"
+    public long NumErrors { set; get; }                     // Number of errors
+    public List<string> BrokenPacks { set; get; } = new();  // Damaged pack IDs
+    public bool SuggestRepairIndex { set; get; }            // Run "restic repair index"
+    public bool SuggestPrune { set; get; }                  // Run "restic prune"
 }
 
 public class ResticCmdResponseBackupStatus : ResticCmdResponse
 {
-    public int SecondsElapsed { set; get; }            // Time since backup started
-    public int SecondsRemaining { set; get; }          // Estimated time remaining
-    public float PercentDone { set; get; }              // Fraction of data backed up (bytes_done/total_bytes)
-    public int TotalFiles { set; get; }                // Total number of files detected
-    public int FilesDone { set; get; }                 // Files completed (backed up to repo)
-    public int TotalBytes { set; get; }                // Total number of bytes in backup set
-    public int BytesDone { set; get; }                 // Number of bytes completed (backed up to repo)
-    public int ErrorCount { set; get; }                // Number of errors
-    public List<string> CurrentFiles { set; get; }       // Files currently being backed up
+    public int SecondsElapsed { set; get; }                  // Time since backup started
+    public int SecondsRemaining { set; get; }                // Estimated time remaining
+    public float PercentDone { set; get; }                   // Fraction of data backed up (bytes_done/total_bytes)
+    public int TotalFiles { set; get; }                      // Total number of files detected
+    public int FilesDone { set; get; }                       // Files completed (backed up to repo)
+    public int TotalBytes { set; get; }                      // Total number of bytes in backup set
+    public int BytesDone { set; get; }                       // Number of bytes completed (backed up to repo)
+    public int ErrorCount { set; get; }                      // Number of errors
+    public List<string> CurrentFiles { set; get; } = new();  // Files currently being backed up
 }
 
 public class ResticCmdResponseBackupSummary : ResticCmdResponse
 {
-    public bool DryRun { set; get; }                     // Whether the backup was a dry run
+    public bool DryRun { set; get; }                   // Whether the backup was a dry run
 
     public int FilesNew { set; get; }                  // Number of new files
     public int FilesChanged { set; get; }              // Number of files that changed
@@ -121,8 +121,8 @@ public class ResticCmdResponseBackupSummary : ResticCmdResponse
     public int DirsChanged { set; get; }               // Number of directories that changed
     public int DirsUnmodified { set; get; }            // Number of directories that did not change
 
-    public int DataBlobs { set; get; }                  // Number of data blobs added
-    public int TreeBlobs { set; get; }                  // Number of tree blobs added
+    public int DataBlobs { set; get; }                 // Number of data blobs added
+    public int TreeBlobs { set; get; }                 // Number of tree blobs added
 
     public int DataAdded { set; get; }                 // Amount of uncompressed data added (bytes)
     public int DataAddedPacked { set; get; }           // Amount of compressed data added (bytes)
@@ -130,11 +130,11 @@ public class ResticCmdResponseBackupSummary : ResticCmdResponse
     public int TotalFilesProcessed { set; get; }       // Total number of files processed
     public int TotalBytesProcessed { set; get; }       // Total number of bytes processed
 
-    public DateTime BackupStart { set; get; }            // Time at which the backup was started
-    public DateTime BackupEnd { set; get; }              // Time at which the backup was completed
-    public double TotalDuration { set; get; }            // Total time it took for the operation (seconds)
+    public DateTime BackupStart { set; get; }          // Time at which the backup was started
+    public DateTime BackupEnd { set; get; }            // Time at which the backup was completed
+    public double TotalDuration { set; get; }          // Total time it took for the operation (seconds)
 
-    public string SnapshotId { set; get; }               // ID of the new snapshot (optional if skipped)
+    public string SnapshotId { set; get; } = "";       // ID of the new snapshot (optional if skipped)
 }
 
 /// <summary>
@@ -299,7 +299,7 @@ public class Restic
         var result = Cli.Wrap(_binPath).WithArguments(argsWithJson)
             .WithValidation(CommandResultValidation.None)
             .WithWorkingDirectory(_cwd);
-        
+
         await foreach (var cmdEvent in result.ListenAsync())
         {
             switch (cmdEvent)
