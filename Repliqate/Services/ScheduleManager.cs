@@ -267,6 +267,6 @@ public class ScheduleManager : BackgroundService
             nextExecuteTime = await _scheduler.ScheduleJob(job, trigger);
         }
 
-        _logger.LogInformation("Backup job assigned to {ContainerName} with the next execute time scheduled for {NextTime}", container.Name, nextExecuteTime?.ToString());
+        _logger.LogInformation("Backup job assigned to {ContainerName} with the next execute time scheduled for {NextTime}", container.Name, nextExecuteTime?.ToLocalTime().ToString());
     }
 }
