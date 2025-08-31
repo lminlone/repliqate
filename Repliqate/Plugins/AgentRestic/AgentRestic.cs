@@ -106,11 +106,9 @@ public class AgentRestic : IAgent
                 _logger.LogInformation("Progress: {ProgressMsg}%", msg.PercentDone);
             });
             _logger.LogInformation("Backup done. New files: {FilesNew} | New dirs: {DirsNew} | Total files: {TotalFiles}", result.FilesNew, result.DirsNew, result.TotalFilesProcessed);
-
-            return true;
         }
         
-        return false;
+        return true;
     }
 
     public async Task<Restic?> LoadRestic()
