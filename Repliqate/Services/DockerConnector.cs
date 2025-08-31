@@ -223,6 +223,13 @@ public class DockerConnector : BackgroundService
         return await _client.Containers.StartContainerAsync(containerId, containerStartParams);
     }
 
+    public async Task<bool> IsContainerRunning(string containerId)
+    {
+        await EnsureConnectedAsync();
+        
+        return await _client.Containers.InspectContainerAsync(containerId).ContinueWith(t => t.Result.State.Running);
+    }
+
     public IList<DockerContainer> GetContainers(Dictionary<string, string>? filterLabels = null)
     {
         List<DockerContainer> containers = [];

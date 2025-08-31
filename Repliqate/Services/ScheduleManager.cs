@@ -62,29 +62,36 @@ public class BackupJob : IJob
         string containerName = jobData.ContainerInfo.GetName();
         
         _logger.LogInformation("Backup job started for {ContainerName}", containerName);
-        
-        _logger.LogInformation("Stopping container {ContainerName}", containerName);
-        bool stopSuccess = await _dockerConnector.StopContainer(jobData.ContainerInfo.ID);
-        if (stopSuccess)
-        {
-            _logger.LogInformation("Successfully stopped container {ContainerName}", containerName);
 
-            await RunBackupTask(context, jobData);
-            
-            _logger.LogInformation("Starting container {ContainerName}", containerName);
-            bool startSuccess = await _dockerConnector.StartContainer(jobData.ContainerInfo.ID);
-            if (startSuccess)
+        // If it is running then stop the container
+        if (await _dockerConnector.IsContainerRunning(jobData.ContainerInfo.ID))
+        {
+            _logger.LogInformation("Stopping container {ContainerName}", containerName);
+            bool stopSuccess = await _dockerConnector.StopContainer(jobData.ContainerInfo.ID);
+            if (stopSuccess)
             {
-                _logger.LogInformation("Successfully started container {ContainerName}", containerName);
+                _logger.LogInformation("Successfully stopped container {ContainerName}", containerName);
             }
             else
             {
-                _logger.LogWarning("Failed to start container {ContainerName}, exiting job", containerName);
+                _logger.LogWarning("Failed to stop container {ContainerName}, exiting job", containerName);
+                return;
             }
+        }
+        
+        _logger.LogInformation("Successfully stopped container {ContainerName}", containerName);
+
+        await RunBackupTask(context, jobData);
+    
+        _logger.LogInformation("Starting container {ContainerName}", containerName);
+        bool startSuccess = await _dockerConnector.StartContainer(jobData.ContainerInfo.ID);
+        if (startSuccess)
+        {
+            _logger.LogInformation("Successfully started container {ContainerName}", containerName);
         }
         else
         {
-            _logger.LogWarning("Failed to stop container {ContainerName}, exiting job", containerName);
+            _logger.LogWarning("Failed to start container {ContainerName}, exiting job", containerName);
         }
     }
 

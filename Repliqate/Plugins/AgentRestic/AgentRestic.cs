@@ -93,12 +93,14 @@ public class AgentRestic : IAgent
             }
             
             string backupDest = Path.Join(jobData.DestinationRoot, "volumes", mount.Name);
+            
+            _logger.LogInformation("Backing up {VolumeName} to {BackupDest}", mount.Name, backupDest);
+            
             Directory.CreateDirectory(backupDest);
             
             // Ensure that the repo exists first
             await restic.EnsureRepoExists(backupDest);
             
-            _logger.LogInformation("Backing up volume {VolumePath}", mount.Name);
             var result = await restic.BackupFiles(mount.Source, backupDest, msg =>
             {
                 _logger.LogInformation("Progress: {ProgressMsg}%", msg.PercentDone);
