@@ -40,7 +40,7 @@ docker run -d \
   --name repliqate \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v /path/to/backups:/var/repliqate \
-  -v /var/lib/docker/volume:/var/lib/docker/volume \
+  -v /var/lib/docker/volumes:/var/lib/docker/volumes \
   lminlone/repliqate
 ```
 
@@ -53,7 +53,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /path/to/backups:/var/repliqate
-      - /var/lib/docker/volume:/var/lib/docker/volume
+      - /var/lib/docker/volumes:/var/lib/docker/volumes
 ```
 
 Or, if you wish to backup to an NFS:
@@ -65,7 +65,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - backups:/var/repliqate
-      - /var/lib/docker/volume:/var/lib/docker/volume
+      - /var/lib/docker/volumes:/var/lib/docker/volumes
 
 volumes:
   backups:
