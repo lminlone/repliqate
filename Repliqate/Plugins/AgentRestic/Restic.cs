@@ -249,11 +249,12 @@ public class Restic
         
         // Need to ensure we operate within the root directory of the backup path, otherwise the repo will inherit
         // parent paths (I don't make the rules).
-        _cwd = from;
+        _cwd = Path.GetFullPath(from);
+        string repoPathAbs = Path.GetFullPath(repoPath);
 
         ResticCmdResponseBackupSummary finalSummary = new();
 
-        await Execute(["-r", repoPath, "backup", ".", "--insecure-no-password"], parseDict, msg =>
+        await Execute(["-r", repoPathAbs, "backup", ".", "--insecure-no-password"], parseDict, msg =>
         {
             if (msg is ResticCmdResponseBackupStatus status)
             {
@@ -300,6 +301,8 @@ public class Restic
             .WithValidation(CommandResultValidation.None)
             .WithWorkingDirectory(_cwd);
 
+        _logger.LogDebug("Executing from {Path}: {Command}", _cwd, result.ToString());
+        
         await foreach (var cmdEvent in result.ListenAsync())
         {
             switch (cmdEvent)
