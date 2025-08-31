@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Collections;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Repliqate.Plugins.AgentRestic;
 using Repliqate.Services;
@@ -26,6 +28,11 @@ public class TestRestic
             builder.AddConsole();
             builder.SetMinimumLevel(LogLevel.Debug);
         });
+        
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection() // You can add test-specific configuration here if needed
+            .Build();
+        services.AddSingleton<IConfiguration>(configuration);
         
         services.AddScoped<DockerConnector>();
         services.AddScoped<AgentProvider>();
@@ -63,6 +70,8 @@ public class TestRestic
     public async Task UpackRestic()
     {
         InitializeRestic();
+        
+        Assert.That(_restic, Is.Not.Null);
         
         var version = await _restic.GetVersion();
         Assert.That(version, Is.Not.Null);
