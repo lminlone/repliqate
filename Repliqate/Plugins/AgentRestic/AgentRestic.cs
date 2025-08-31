@@ -103,7 +103,7 @@ public class AgentRestic : IAgent
             
             var result = await restic.BackupFiles(mount.Source, backupDest, msg =>
             {
-                _logger.LogInformation("Progress: {ProgressMsg}%", msg.PercentDone);
+                _logger.LogInformation("Progress: {ProgressMsg}%", (int)(msg.PercentDone * 100));
             });
             _logger.LogInformation("Backup done. New files: {FilesNew} | New dirs: {DirsNew} | Total files: {TotalFiles}", result.FilesNew, result.DirsNew, result.TotalFilesProcessed);
         }
