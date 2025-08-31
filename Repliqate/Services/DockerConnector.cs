@@ -66,6 +66,7 @@ public class DockerConnector : BackgroundService
         {
             var inspectData = await _client.Containers.InspectContainerAsync(container.ID);
             var wrappedDockerContainer = new DockerContainer(inspectData);
+            await wrappedDockerContainer.DiscoverVolumes(this);
             _containers.Add(wrappedDockerContainer);
             
             // Call create events per container found for late registrars
@@ -137,6 +138,7 @@ public class DockerConnector : BackgroundService
                 
                 var inspectData = await _client.Containers.InspectContainerAsync(message.Actor.ID);
                 var wrappedDockerContainer = new DockerContainer(inspectData);
+                await wrappedDockerContainer.DiscoverVolumes(this);
                 _containers.Add(wrappedDockerContainer);
                 
                 _logger.LogInformation("Container {ContainerId} ({ContainerName}) added", message.Actor.ID,  wrappedDockerContainer.Name);
@@ -265,28 +267,11 @@ public class DockerConnector : BackgroundService
         return await _client.Volumes.ListAsync();
     }
 
-    public async Task<Dictionary<string, StackList>> GetchStacks()
+    public async Task<VolumeResponse> InspectVolume(string volumeId)
     {
         await EnsureConnectedAsync();
         
-        var stackList = new Dictionary<string, StackList>();
-        
-        var containers = await FetchContainers();
-        foreach (var container in containers)
-        {
-            if (container.Labels.TryGetValue("com.docker.compose.project", out var stackName))
-            {
-                if (!stackList.TryGetValue(stackName, out var stack))
-                {
-                    stack = new StackList();
-                    stackList.Add(stackName, stack);
-                }
-                
-                stack.Containers.Add(container);
-            }
-        }
-
-        return stackList;
+        return await _client.Volumes.InspectAsync(volumeId);
     }
 
     public override void Dispose()

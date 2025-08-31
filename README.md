@@ -99,13 +99,15 @@ Repliqate uses Docker labels for configuration. This keeps backup policies close
 | `repliqate.engine`       | Backup engine selection                                                                                                                | `restic` | `restic`                                             |
 | `repliqate.schedule`     | Backup schedule (cron format)                                                                                                          | `none`   | `@daily 3am` (see [Scheduling](#scheduling) section) |
 | `repliqate.backup_id`    | Unique backup identifier for the container.<br/><br/>**NOTE**: Ensure this is fully unique across all containers on the docker server. | `none`   | `prod-db-01`                                         |
-| `repliqate.retention`    | Amount of backups to keep.                                                                                                             | `10`     | `3`                                                  |
-| `repliqate.excl_volumes` | A comma separated list of all volumes you wish to be excluded from being backed up. List each volume by its volume's name.             |          | `volume_1,volume_2`                                  |
+| `repliqate.retention`    | Amount of backups to keep. (Currently WIP)                                                                                             | `10`     | `3`                                                  |
 
-### Notes
-`repliqate.excl_volumes`: keep in mind that if you're putting together a stack with volumes that are going to be automatically be created, you'll have to prefix your volume names with the stack name (to guarantee you get the name right, deploy the stack first then check the names out in the volumes list).
+## Volume Labels
+| Label                | Description                                   | Default   |
+|----------------------|-----------------------------------------------|-----------|
+| `repliqate.exclude`  | Exclude this volume from container backups.   | `false`   |
 
-**Example: Labeling a container**
+## Examples
+Example 1 (Simple)
 ```shell
 docker run -d \
   --label repliqate.enabled=true \
@@ -114,6 +116,27 @@ docker run -d \
   --label repliqate.backup_id=my_app_01 \
   --name my_app \
   my_image:latest
+```
+
+Example 2 (A bit more complex)
+```yml
+services:
+  app:
+    image: my-app:latest
+    volumes:
+      - data:/my-app/data
+      - uploads:/my-app/uploads
+    labels:
+      repliqate.enabled: 'true'
+      repliqate.schedule: "@daily 10:34"
+      repliqate.engine: restic
+      repliqate.backup_id: my_app
+
+volumes:
+  data:
+    labels:
+      repliqate.exclude: 'true' # Exclude from being backed up
+  uploads:
 ```
 
 # Scheduling

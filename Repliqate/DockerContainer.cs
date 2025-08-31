@@ -1,4 +1,5 @@
 ﻿using Docker.DotNet.Models;
+using Repliqate.Services;
 
 namespace Repliqate;
 
@@ -16,6 +17,7 @@ public class DockerContainer
     public const string RepliqateLabelExclVolume = RepliqateLabelPrefix + "excl_volumes";
     
     private readonly ContainerInspectResponse _dockerContainerData;
+    private List<VolumeResponse> _volumes = new();
     
     public string ID => _dockerContainerData.ID;
     public Config Config => _dockerContainerData.Config;
@@ -32,6 +34,17 @@ public class DockerContainer
     public DockerContainer(ContainerInspectResponse dockerContainerData)
     {
         _dockerContainerData = dockerContainerData;
+    }
+
+    public async Task DiscoverVolumes(DockerConnector dockerConnector)
+    {
+        _volumes = new();
+        
+        foreach (var mount in _dockerContainerData.Mounts)
+        {
+            if (mount.Type == "volume")
+                _volumes.Add(await dockerConnector.InspectVolume(mount.Name));
+        }
     }
 
     public bool ContainsMandatoryLabels(out List<string> missingLabels)
@@ -90,5 +103,10 @@ public class DockerContainer
             return new();
         
         return exclVolumesStr.Split(',').ToList();
+    }
+
+    public VolumeResponse? GetVolume(string volumeName)
+    {
+        return _volumes.FirstOrDefault(v => v.Name == volumeName);
     }
 }

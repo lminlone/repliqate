@@ -67,11 +67,22 @@ public class AgentRestic : IAgent
                 continue;
             }
             
-            // Name was part of the exclusions
-            if (excludeVolumeNames.Contains(mount.Name))
+            // Fetch the volume from the volumes list
+            var volumeInfo = jobData.ContainerInfo.GetVolume(mount.Name);
+            if (volumeInfo == null)
             {
-                _logger.LogInformation("Volume {VolumeName} ({VolumePath}) excluded from backup via container label config, skipping", mount.Name, mount.Source);
+                _logger.LogWarning("Volume {VolumeName} ({VolumePath}) not found in container {ContainerName}, skipping", mount.Name, mount.Source, jobData.ContainerInfo.GetName());
                 continue;
+            }
+            
+            // Name was part of the exclusions
+            if (volumeInfo.Labels.TryGetValue("repliqate.exclude", out var value))
+            {
+                if (value == "true")
+                {
+                    _logger.LogInformation("Volume {VolumeName} ({VolumePath}) excluded from backup via container label config, skipping", mount.Name, mount.Source);
+                    continue;   
+                }
             }
             
             // Ensure that the mount source path exists first and we have access to it, otherwise we can't back it up
