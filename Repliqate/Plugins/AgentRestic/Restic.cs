@@ -10,6 +10,75 @@ using Repliqate.Plugins.AgentRestic.CliResponseStructures;
 
 namespace Repliqate.Plugins.AgentRestic;
 
+public abstract class JsonParser
+{
+    public abstract object? ParseStdOut(string s);
+    public abstract object? ParseStdErr(string s);
+
+    public object? MarshalJson(string s, Dictionary<string, Type> parseDict)
+    {
+        // First have to deserialize to base class so we can determine what the message is to be able to
+        // marshal into the right class.
+        var options = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
+        var json = JsonSerializer.Deserialize<ResponseHeader>(s, options);
+        if (json is null)
+            return null;
+        
+        if (!parseDict.TryGetValue(json.MessageType, out var transformType))
+        {
+            return null;
+        }
+        
+        return (ResponseHeader)JsonSerializer.Deserialize(s, transformType, options);
+    }
+}
+
+public class JsonParserMarshal : JsonParser
+{
+    private readonly Dictionary<string, Type> _parseDict;
+
+    public JsonParserMarshal(Dictionary<string, Type> parseDict)
+    {
+        _parseDict = parseDict;
+    }
+
+    public override object? ParseStdOut(string s)
+    {
+        return MarshalJson(s, _parseDict);
+    }
+
+    public override object? ParseStdErr(string s)
+    {
+        return MarshalJson(s, _parseDict);
+    }
+}
+
+public class JsonParserCmdResponseForgetGroup : JsonParserMarshal
+{
+    public JsonParserCmdResponseForgetGroup() : base(new())
+    {
+        
+    }
+    
+    public JsonParserCmdResponseForgetGroup(Dictionary<string, Type> parseDict) : base(parseDict)
+    {
+        parseDict = new()
+        {
+            { "error", typeof(Error) }
+        };
+    }
+
+    public override object? ParseStdOut(string s)
+    {
+        return JsonSerializer.Deserialize<List<ForgetGroup>>(s);
+    }
+}
+
 /// <summary>
 /// Wraps the Restic CLI app using the restic scripting API (https://restic.readthedocs.io/en/latest/075_scripting.html)
 /// </summary>
@@ -33,13 +102,13 @@ public class Restic
     {
         var version = "";
 
-        Dictionary<string, Type> parseDict = new()
+        var jsonParser = new JsonParserMarshal(new()
         {
             { "exit_error", typeof(Error) },
             { "version", typeof(ResticVersion) },
-        };
+        });
         
-        var result = await Execute(["version"], parseDict, (msg) =>
+        var result = await Execute(["version"], jsonParser, (msg) =>
         {
             if (msg is ResticVersion versionResponse)
             {
@@ -54,17 +123,17 @@ public class Restic
     {
         bool result = false;
 
-        Dictionary<string, Type> parseDict = new()
+        var jsonParser = new JsonParserMarshal(new()
         {
             { "exit_error", typeof(Error) },
             { "summary", typeof(CheckSummary) },
-        };
+        });
         
         // Make sure the directory at least exists
         if (Directory.Exists(location))
         {
             // Check check on the repo to make sure it's legit. If the execution came out on stdout then we're ok :)
-            var exitCode = await Execute(["check", "-r", location, "--insecure-no-password"], parseDict, msg =>
+            var exitCode = await Execute(["check", "-r", location, "--insecure-no-password"], jsonParser, msg =>
             {
                 result = true;
             },
@@ -94,13 +163,13 @@ public class Restic
     {
         Initialized result = new();
 
-        Dictionary<string, Type> parseDict = new()
+        var jsonParser = new JsonParserMarshal(new()
         {
             { "exit_error", typeof(Error) },
             { "initialized", typeof(Initialized) },
-        };
+        });
         
-        await Execute(["init", "-r", location, "--insecure-no-password"], parseDict, (msg) =>
+        await Execute(["init", "-r", location, "--insecure-no-password"], jsonParser, (msg) =>
         {
             if (msg is Initialized response)
             {
@@ -113,12 +182,12 @@ public class Restic
 
     public async Task<BackupSummary> BackupFiles(string from, string repoPath, Action<BackupStatus> statusCallback)
     {
-        Dictionary<string, Type> parseDict = new()
+        var jsonParser = new JsonParserMarshal(new()
         {
             { "exit_error", typeof(Error) },
             { "status", typeof(BackupStatus) },
             { "summary", typeof(BackupSummary) },
-        };
+        });
         
         // Need to ensure we operate within the root directory of the backup path, otherwise the repo will inherit
         // parent paths (I don't make the rules).
@@ -127,7 +196,7 @@ public class Restic
 
         BackupSummary finalSummary = new();
 
-        await Execute(["-r", repoPathAbs, "backup", ".", "--insecure-no-password"], parseDict, msg =>
+        await Execute(["-r", repoPathAbs, "backup", ".", "--insecure-no-password"], jsonParser, msg =>
         {
             if (msg is BackupStatus status)
             {
@@ -149,14 +218,14 @@ public class Restic
     public async Task<Snapshot> ListFilesInSnapshot(string location, string snapshot = "latest")
     {
         Snapshot result = new();
-
-        Dictionary<string, Type> parseDict = new()
+        
+        var jsonParser = new JsonParserMarshal(new()
         {
             { "exit_error", typeof(Error) },
             { "snapshot", typeof(Snapshot) },
-        };
+        });
         
-        await Execute(["-r", location, "ls"], parseDict, (msg) =>
+        await Execute(["-r", location, "ls"], jsonParser, (msg) =>
         {
             if (msg is Snapshot response)
             {
@@ -166,8 +235,15 @@ public class Restic
 
         return result;
     }
+
+    public async Task<List<ForgetGroup>> ForgetSnapshotWithDurationPolicy(string repoLocation, string policy)
+    {
+        List<ForgetGroup> result = new();
+
+        return result;
+    }
     
-    public async Task<int> Execute(string[] args, Dictionary<string, Type> jsonParseObjects, Action<ResponseHeader> stdOutCallback, Action<ResponseHeader>? stdErrCallback = null)
+    public async Task<int> Execute(string[] args, JsonParser parserInstance, Action<object?> stdOutCallback, Action<object?>? stdErrCallback = null)
     {
         var argsWithJson = new[] { "--json" }.Concat(args).ToArray();
         var result = Cli.Wrap(_binPath).WithArguments(argsWithJson)
@@ -183,11 +259,11 @@ public class Restic
                 case StartedCommandEvent started:
                     break;
                 case StandardOutputCommandEvent stdOut:
-                    var parsedOut = ParseCmdStreamToResticJson(stdOut.Text, jsonParseObjects);
+                    var parsedOut = parserInstance.ParseStdOut(stdOut.Text);
                     stdOutCallback.Invoke(parsedOut!);
                     break;
                 case StandardErrorCommandEvent stdErr:
-                    var parsedErr = ParseCmdStreamToResticJson(stdErr.Text, jsonParseObjects);
+                    var parsedErr = parserInstance.ParseStdErr(stdErr.Text);
                     stdErrCallback?.Invoke(parsedErr!);
                     break;
                 case ExitedCommandEvent exited:
@@ -199,29 +275,7 @@ public class Restic
         return 1000;
     }
 
-    private ResponseHeader? ParseCmdStreamToResticJson(string s, Dictionary<string, Type> jsonParseObjects)
-    {
-        // First have to deserialize to base class so we can determine what the message is to be able to
-        // marshal into the right class.
-        var options = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
-        };
-        var json = JsonSerializer.Deserialize<ResponseHeader>(s, options);
-        if (json is null)
-            return null;
-        
-        if (!jsonParseObjects.TryGetValue(json.MessageType, out var transformType))
-        {
-            return null;
-        }
-        
-        return (ResponseHeader)JsonSerializer.Deserialize(s, transformType, options);
-    }
-
-    private void ReportError(ResponseHeader err)
+    private void ReportError(object? err)
     {
         if (err is Error error)
         {
@@ -229,7 +283,7 @@ public class Restic
         }
         else
         {
-            _logger.LogError("Restic command failed: {ErrorMessage}", err.ToString());
+            _logger.LogError("Restic command failed: {ErrorMessage}", err?.ToString());
         }
     }
 }
