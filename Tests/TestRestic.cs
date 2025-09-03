@@ -67,7 +67,7 @@ public class TestRestic
     }
 
     [Test]
-    public async Task UpackRestic()
+    public async Task ResticCli_VersionShouldReturnBundledVersion()
     {
         InitializeRestic();
         
@@ -75,12 +75,12 @@ public class TestRestic
         
         var version = await _restic.GetVersion();
         Assert.That(version, Is.Not.Null);
-        Assert.That(version, Is.EqualTo(AgentRestic.BundledResticVersion), $"Restic version confirmed to be {AgentRestic.BundledResticVersion}");
+        Assert.That(version, Is.EqualTo(AgentRestic.BundledResticVersion), $"Restic version should be be {AgentRestic.BundledResticVersion}");
     }
 
     [Test]
     [TestCase("Repo/test")]
-    public async Task InitRepo(string repoDest)
+    public async Task ResticCli_CanCycle(string repoDest)
     {
         // Kill the repo first if it exists
         if (Directory.Exists(repoDest))
@@ -98,11 +98,14 @@ public class TestRestic
         var repoExists = await _restic.RepoExists(repoDest);
         Assert.That(repoExists, Is.True);
 
+        // Backup, but make it seem like it's a backup from a month ago
         var summary = await _restic.BackupFiles("TestFiles", repoDest, status =>
         {
             
         });
         Assert.That(summary, Is.Not.Null);
         Assert.That(summary.FilesNew, Is.EqualTo(1));
+        
+        // Make a change to the source
     }
 }

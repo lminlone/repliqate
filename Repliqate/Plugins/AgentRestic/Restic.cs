@@ -182,6 +182,11 @@ public class Restic
 
     public async Task<BackupSummary> BackupFiles(string from, string repoPath, Action<BackupStatus> statusCallback)
     {
+        return await BackupFiles(from, repoPath, statusCallback);
+    }
+
+    public async Task<BackupSummary> BackupFiles(string from, string repoPath, Action<BackupStatus> statusCallback, List<string> extraArgs)
+    {
         var jsonParser = new JsonParserMarshal(new()
         {
             { "exit_error", typeof(Error) },
@@ -196,21 +201,24 @@ public class Restic
 
         BackupSummary finalSummary = new();
 
-        await Execute(["-r", repoPathAbs, "backup", ".", "--insecure-no-password"], jsonParser, msg =>
-        {
-            if (msg is BackupStatus status)
+        var args = new List<string> { "-r", repoPathAbs, "backup", ".", "--insecure-no-password" };
+        args.AddRange(extraArgs);
+        
+        await Execute(args.ToArray(), jsonParser, msg =>
             {
-                statusCallback.Invoke(status);
-            }
-            else if (msg is BackupSummary summary)
+                if (msg is BackupStatus status)
+                {
+                    statusCallback.Invoke(status);
+                }
+                else if (msg is BackupSummary summary)
+                {
+                    finalSummary = summary;
+                }
+            },
+            err =>
             {
-                finalSummary = summary;
-            }
-        },
-        err =>
-        {
             
-        });
+            });
 
         return finalSummary;
     }
@@ -239,6 +247,12 @@ public class Restic
     public async Task<List<ForgetGroup>> ForgetSnapshotWithDurationPolicy(string repoLocation, string policy)
     {
         List<ForgetGroup> result = new();
+        
+        var jsonParser = new JsonParserCmdResponseForgetGroup();
+        var t = await Execute(["-r", repoLocation, "forget", "--keep-within", policy], jsonParser, (msg) =>
+        {
+
+        }, ReportError);
 
         return result;
     }
