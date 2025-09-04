@@ -8,9 +8,7 @@
 </p>
 
 <p align="center">
-    <a href="https://hub.docker.com/r/lminlone/repliqate">
-        <img src="https://img.shields.io/docker/pulls/lminlone/repliqate">
-    </a>
+    <img src="https://img.shields.io/docker/pulls/lminlone/repliqate">
     <img src="https://img.shields.io/docker/image-size/lminlone/repliqate">
 </p>
 
@@ -93,13 +91,13 @@ volumes:
 Repliqate uses Docker labels for configuration. This keeps backup policies close to the containers and volumes they apply to, eliminating the need for separate configuration files.
 
 ## Container Labels
-| Label                    | Description                                                                                                                            | Default  | Example                                              |
-|--------------------------|----------------------------------------------------------------------------------------------------------------------------------------|----------|------------------------------------------------------|
-| `repliqate.enabled`      | Enables backup for the container                                                                                                       | `false`  | `true`                                               |
-| `repliqate.engine`       | Backup engine selection                                                                                                                | `restic` | `restic`                                             |
-| `repliqate.schedule`     | Backup schedule (cron format)                                                                                                          | `none`   | `@daily 3am` (see [Scheduling](#scheduling) section) |
-| `repliqate.backup_id`    | Unique backup identifier for the container.<br/><br/>**NOTE**: Ensure this is fully unique across all containers on the docker server. | `none`   | `prod-db-01`                                         |
-| `repliqate.retention`    | Amount of backups to keep. (Currently WIP)                                                                                             | `10`     | `3`                                                  |
+| Label                    | Description                                                                                                                            | Default  | Example                                                                          |
+|--------------------------|----------------------------------------------------------------------------------------------------------------------------------------|----------|----------------------------------------------------------------------------------|
+| `repliqate.enabled`      | Enables backup for the container                                                                                                       | `false`  | `true`                                                                           |
+| `repliqate.engine`       | Backup engine selection                                                                                                                | `restic` | `restic`                                                                         |
+| `repliqate.schedule`     | Backup schedule (cron format)                                                                                                          | `none`   | `@daily 3am` (see [Scheduling](#scheduling) section)                             |
+| `repliqate.backup_id`    | Unique backup identifier for the container.<br/><br/>**NOTE**: Ensure this is fully unique across all containers on the docker server. | `none`   | `prod-db-01`                                                                     |
+| `repliqate.retention`    | Keep all snapshots taken within the specified time span (years, months, days, hours) before the latest snapshot.                       | `N/A`    | `2y5m7d3h` keeps snapshots from the last 2 years, 5 months, 7 days, and 3 hours. |
 
 ## Volume Labels
 | Label                | Description                                   | Default   |
