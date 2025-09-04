@@ -261,8 +261,10 @@ public class Restic
         return result;
     }
 
-    public async Task<Snapshot> ListFilesInSnapshot(string location, string snapshot = "latest")
+    public async Task<Snapshot> ListFilesInSnapshot(string repoPath, string snapshot = "latest")
     {
+        string repoPathAbs = Path.GetFullPath(repoPath);
+        
         Snapshot result = new();
         
         var jsonParser = new JsonParserMarshal(new()
@@ -271,7 +273,7 @@ public class Restic
             { "snapshot", typeof(Snapshot) },
         });
         
-        await Execute(["-r", location, "ls"], jsonParser, (msg) =>
+        await Execute(["-r", repoPathAbs, "ls", "--insecure-no-password"], jsonParser, (msg) =>
         {
             if (msg is Snapshot response)
             {
@@ -282,14 +284,19 @@ public class Restic
         return result;
     }
 
-    public async Task<List<ForgetGroup>> ForgetSnapshotWithDurationPolicy(string repoLocation, string policy)
+    public async Task<List<ForgetGroup>> ForgetSnapshotWithDurationPolicy(string repoPath, string policy)
     {
+        string repoPathAbs = Path.GetFullPath(repoPath);
+        
         List<ForgetGroup> result = new();
         
         var jsonParser = new JsonParserCmdResponseForgetGroup();
-        var t = await Execute(["-r", repoLocation, "forget", "--keep-within", policy], jsonParser, (msg) =>
+        var t = await Execute(["-r", repoPathAbs, "forget", "--keep-within", policy, "--insecure-no-password"], jsonParser, (msg) =>
         {
-
+            if (msg is List<ForgetGroup> forgottenSnapshots)
+            {
+                result = forgottenSnapshots;
+            }
         }, ReportError);
 
         return result;
