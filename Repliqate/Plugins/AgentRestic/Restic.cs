@@ -202,7 +202,7 @@ public class Restic
 
     public async Task<BackupSummary> BackupFiles(string from, string repoPath, Action<BackupStatus> statusCallback)
     {
-        return await BackupFiles(from, repoPath, statusCallback);
+        return await BackupFiles(from, repoPath, statusCallback, new());
     }
 
     public async Task<BackupSummary> BackupFiles(string from, string repoPath, Action<BackupStatus> statusCallback, List<string> extraArgs)
