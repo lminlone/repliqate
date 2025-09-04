@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Repliqate.Plugins.AgentRestic;
+using Repliqate.Plugins.AgentRestic.CliResponseStructures;
 using Repliqate.Services;
 using Serilog;
 
@@ -84,9 +85,12 @@ public class TestRestic
     {
         // Kill the repo first if it exists
         if (Directory.Exists(repoDest))
-        {
             Directory.Delete(repoDest, true);
-        }
+        if (Directory.Exists("TestFiles"))
+            Directory.Delete("TestFiles", true);
+        
+        Directory.CreateDirectory("TestFiles");
+        File.WriteAllText(Path.Join("TestFiles", "test1.txt"), "Hello World");
         
         InitializeRestic();
 
@@ -98,14 +102,31 @@ public class TestRestic
         var repoExists = await _restic.RepoExists(repoDest);
         Assert.That(repoExists, Is.True);
 
+        DateTime firstBackupTime = DateTime.Now.AddMonths(-1);
+        List<string> extraArgs = new() { "--time", firstBackupTime.ToString("yyyy-MM-dd HH:mm:ss") };
+
         // Backup, but make it seem like it's a backup from a month ago
         var summary = await _restic.BackupFiles("TestFiles", repoDest, status =>
         {
             
-        });
+        }, extraArgs);
         Assert.That(summary, Is.Not.Null);
         Assert.That(summary.FilesNew, Is.EqualTo(1));
         
         // Make a change to the source
+        File.WriteAllText(Path.Join("TestFiles", "test2.txt"), "Hello World");
+        
+        // Backup again
+        var summary2 = await _restic.BackupFiles("TestFiles", repoDest, status =>
+        {
+            
+        });
+        Assert.That(summary2, Is.Not.Null);
+        Assert.That(summary2.FilesNew, Is.EqualTo(1));
+        
+        List<Snapshot> snapshots = await _restic.ListSnapshots(repoDest);
+        Assert.That(snapshots, Is.Not.Null);
+        Assert.That(snapshots.Count, Is.EqualTo(2));
+        Assert.That(snapshots[0].Time, Is.EqualTo(firstBackupTime));
     }
 }
