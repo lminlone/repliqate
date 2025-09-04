@@ -9,12 +9,14 @@ using Serilog.Events;
 
 class Program
 {
+    public static readonly string TimeStampFormat = "dd-MM-yyyy HH:mm:ss";
+    
     static async Task Main(string[] args)
     {
         DotNetEnv.Env.Load();
         
         Log.Logger = new LoggerConfiguration()
-            .WriteTo.Console(outputTemplate: "[{Timestamp:dd-MM-yyyy HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
+            .WriteTo.Console(outputTemplate: "[{Timestamp:" + TimeStampFormat + "} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
             .CreateBootstrapLogger();
         
         // Get version and git commit info
@@ -55,7 +57,7 @@ class Program
                 loggerConfiguration
                     .ReadFrom.Configuration(context.Configuration)
                     .ReadFrom.Services(services)
-                    .WriteTo.Console(outputTemplate: "[{Timestamp:dd-MM-yyyy HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
+                    .WriteTo.Console(outputTemplate: "[{Timestamp:" + TimeStampFormat + "} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
                     .MinimumLevel.Information()
                     .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
                     .Enrich.FromLogContext();
