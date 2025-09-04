@@ -114,15 +114,15 @@ public class AgentRestic : IAgent
                 var forgetGroups = await restic.ForgetSnapshotWithDurationPolicy(backupDest, retentionPolicy);
                 foreach (var forgetGroup in forgetGroups)
                 {
-                    _logger.LogInformation("Snapshot removal policies: {Reasons}", string.Join(", ", forgetGroup.Reasons));
+                    if (forgetGroup.Remove == null || forgetGroup.Remove.Count == 0)
+                    {
+                        _logger.LogInformation("No snapshots to be removed");
+                        continue;
+                    }
+                    
                     foreach (var removedSnapshot in forgetGroup.Remove)
                     {
                         _logger.LogInformation("Removed snapshot {SnapshotId} from {Time}", removedSnapshot.Id, removedSnapshot.Time.ToString(Program.TimeStampFormat));
-                    }
-
-                    if (forgetGroup.Remove.Count == 0)
-                    {
-                        _logger.LogInformation("No snapshots to be removed");
                     }
                 }
             }

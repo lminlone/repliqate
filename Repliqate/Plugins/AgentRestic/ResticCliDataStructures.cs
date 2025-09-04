@@ -422,7 +422,7 @@ public class ForgetGroup : ResponseHeader
     /// <summary>
     /// Array of snapshots that were removed.
     /// </summary>
-    public List<Snapshot> Remove { get; set; } = new();
+    public List<Snapshot>? Remove { get; set; } = new();
 
     /// <summary>
     /// Array of keep reasons explaining why a snapshot is kept.
