@@ -135,5 +135,10 @@ public class TestRestic
         Assert.That(response, Is.Not.Null);
         Assert.That(response.Count, Is.EqualTo(1));
         Assert.That(response[0].Remove.Count, Is.EqualTo(1)); // Make sure we forgot one snapshot
+        
+        var response2 = await _restic.ForgetSnapshotWithDurationPolicy(repoDest, "20d");
+        Assert.That(response2, Is.Not.Null);
+        Assert.That(response2.Count, Is.EqualTo(1));
+        Assert.That(response2[0].Remove, Is.Null);
     }
 }
