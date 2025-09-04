@@ -19,6 +19,12 @@ public class Error : ResponseHeader
     public string Message { get; set; } = "";
 }
 
+public class ExitError : ResponseHeader
+{
+    public int Code { get; set; }
+    public string Message { get; set; } = "";
+}
+
 // Cmd: init
 public class Initialized : ResponseHeader
 {

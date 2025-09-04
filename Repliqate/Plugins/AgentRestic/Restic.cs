@@ -12,6 +12,13 @@ namespace Repliqate.Plugins.AgentRestic;
 
 public abstract class JsonParser
 {
+    public static JsonSerializerOptions GeneralOptions = new JsonSerializerOptions
+    {
+        PropertyNameCaseInsensitive = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+    };
+    
     public abstract object? ParseStdOut(string s);
     public abstract object? ParseStdErr(string s);
 
@@ -19,13 +26,7 @@ public abstract class JsonParser
     {
         // First have to deserialize to base class so we can determine what the message is to be able to
         // marshal into the right class.
-        var options = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
-        };
-        var json = JsonSerializer.Deserialize<ResponseHeader>(s, options);
+        var json = JsonSerializer.Deserialize<ResponseHeader>(s, GeneralOptions);
         if (json is null)
             return null;
         
@@ -34,7 +35,7 @@ public abstract class JsonParser
             return null;
         }
         
-        return (ResponseHeader)JsonSerializer.Deserialize(s, transformType, options);
+        return (ResponseHeader)JsonSerializer.Deserialize(s, transformType, GeneralOptions);
     }
 }
 
@@ -60,22 +61,37 @@ public class JsonParserMarshal : JsonParser
 
 public class JsonParserCmdResponseForgetGroup : JsonParserMarshal
 {
-    public JsonParserCmdResponseForgetGroup() : base(new())
-    {
-        
-    }
+    public JsonParserCmdResponseForgetGroup() : base(new()) {}
     
     public JsonParserCmdResponseForgetGroup(Dictionary<string, Type> parseDict) : base(parseDict)
     {
         parseDict = new()
         {
-            { "error", typeof(Error) }
+            { "exit_error", typeof(Error) },
         };
     }
 
     public override object? ParseStdOut(string s)
     {
-        return JsonSerializer.Deserialize<List<ForgetGroup>>(s);
+        return JsonSerializer.Deserialize<List<ForgetGroup>>(s, GeneralOptions);
+    }
+}
+
+public class JsonParserCmdResponseSnapshots : JsonParserMarshal
+{
+    public JsonParserCmdResponseSnapshots() : base(new()) {}
+    
+    public JsonParserCmdResponseSnapshots(Dictionary<string, Type> parseDict) : base(parseDict)
+    {
+        parseDict = new()
+        {
+            { "exit_error", typeof(Error) },
+        };
+    }
+
+    public override object? ParseStdOut(string s)
+    {
+        return JsonSerializer.Deserialize<List<Snapshot>>(s, GeneralOptions);
     }
 }
 
@@ -119,8 +135,10 @@ public class Restic
         return version;
     }
 
-    public async Task<bool> RepoExists(string location)
+    public async Task<bool> RepoExists(string repoPath)
     {
+        string repoPathAbs = Path.GetFullPath(repoPath);
+        
         bool result = false;
 
         var jsonParser = new JsonParserMarshal(new()
@@ -130,10 +148,10 @@ public class Restic
         });
         
         // Make sure the directory at least exists
-        if (Directory.Exists(location))
+        if (Directory.Exists(repoPathAbs))
         {
             // Check check on the repo to make sure it's legit. If the execution came out on stdout then we're ok :)
-            var exitCode = await Execute(["check", "-r", location, "--insecure-no-password"], jsonParser, msg =>
+            var exitCode = await Execute(["check", "-r", repoPathAbs, "--insecure-no-password"], jsonParser, msg =>
             {
                 result = true;
             },
@@ -159,8 +177,10 @@ public class Restic
         }
     }
 
-    public async Task<Initialized> InitRepo(string location)
+    public async Task<Initialized> InitRepo(string repoPath)
     {
+        string repoPathAbs = Path.GetFullPath(repoPath);
+        
         Initialized result = new();
 
         var jsonParser = new JsonParserMarshal(new()
@@ -169,7 +189,7 @@ public class Restic
             { "initialized", typeof(Initialized) },
         });
         
-        await Execute(["init", "-r", location, "--insecure-no-password"], jsonParser, (msg) =>
+        await Execute(["init", "-r", repoPathAbs, "--insecure-no-password"], jsonParser, (msg) =>
         {
             if (msg is Initialized response)
             {
@@ -205,22 +225,40 @@ public class Restic
         args.AddRange(extraArgs);
         
         await Execute(args.ToArray(), jsonParser, msg =>
+        {
+            if (msg is BackupStatus status)
             {
-                if (msg is BackupStatus status)
-                {
-                    statusCallback.Invoke(status);
-                }
-                else if (msg is BackupSummary summary)
-                {
-                    finalSummary = summary;
-                }
-            },
-            err =>
+                statusCallback.Invoke(status);
+            }
+            else if (msg is BackupSummary summary)
             {
-            
-            });
+                finalSummary = summary;
+            }
+        },
+        err =>
+        {
+        
+        });
 
         return finalSummary;
+    }
+
+    public async Task<List<Snapshot>> ListSnapshots(string repoPath)
+    {
+        string repoPathAbs = Path.GetFullPath(repoPath);
+        
+        List<Snapshot> result = new();
+        
+        var jsonParser = new JsonParserCmdResponseSnapshots();
+        var t = await Execute(["-r", repoPathAbs, "snapshots", "--insecure-no-password"], jsonParser, (msg) =>
+        {
+            if (msg is List<Snapshot> response)
+            {
+                result = response;
+            }
+        }, ReportError);
+
+        return result;
     }
 
     public async Task<Snapshot> ListFilesInSnapshot(string location, string snapshot = "latest")
