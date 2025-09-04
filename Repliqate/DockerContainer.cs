@@ -88,13 +88,12 @@ public class DockerContainer
         return _dockerContainerData.Config.Labels[RepliqateLabelBackupId];
     }
 
-    public int GetRetention()
+    public string GetRetentionPolicy()
     {
         if (!_dockerContainerData.Config.Labels.TryGetValue(RepliqateLabelRetention, out var retentionStr))
-            return 10;
+            return "";
         
-        // TODO: Need to figure out what we do when it cannot be parsed
-        return int.Parse(retentionStr);
+        return retentionStr;
     }
     
     public List<string> GetExcludedVolumes()

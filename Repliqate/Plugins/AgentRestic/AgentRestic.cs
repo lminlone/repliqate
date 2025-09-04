@@ -106,6 +106,26 @@ public class AgentRestic : IAgent
                 _logger.LogInformation("Progress: {ProgressMsg}%", (int)(msg.PercentDone * 100));
             });
             _logger.LogInformation("Backup done. New files: {FilesNew} | New dirs: {DirsNew} | Total files: {TotalFiles}", result.FilesNew, result.DirsNew, result.TotalFilesProcessed);
+            
+            // Now we enforce the retention policy if one is specified
+            string retentionPolicy = jobData.ContainerInfo.GetRetentionPolicy();
+            if (retentionPolicy != string.Empty)
+            {
+                var forgetGroups = await restic.ForgetSnapshotWithDurationPolicy(backupDest, retentionPolicy);
+                foreach (var forgetGroup in forgetGroups)
+                {
+                    _logger.LogInformation("Snapshot removal policies: {Reasons}", string.Join(", ", forgetGroup.Reasons));
+                    foreach (var removedSnapshot in forgetGroup.Remove)
+                    {
+                        _logger.LogInformation("Removed snapshot {SnapshotId} from {Time}", removedSnapshot.Id, removedSnapshot.Time.ToString(Program.TimeStampFormat));
+                    }
+
+                    if (forgetGroup.Remove.Count == 0)
+                    {
+                        _logger.LogInformation("No snapshots to be removed");
+                    }
+                }
+            }
         }
         
         return true;
