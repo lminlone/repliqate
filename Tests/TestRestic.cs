@@ -55,7 +55,7 @@ public class TestRestic
         return _serviceProvider.GetRequiredService<T>();
     }
 
-    private async void InitializeRestic()
+    private async Task InitializeRestic()
     {
         var agentProvider = GetService<AgentProvider>();
 
@@ -70,7 +70,7 @@ public class TestRestic
     [Test]
     public async Task ResticCli_VersionShouldReturnBundledVersion()
     {
-        InitializeRestic();
+        await InitializeRestic();
         
         Assert.That(_restic, Is.Not.Null);
         
@@ -81,7 +81,7 @@ public class TestRestic
 
     [Test]
     [TestCase("Repo/test")]
-    public async Task ResticCli_CanCycle(string repoDest)
+    public async Task ResticCli_TestImplementation(string repoDest)
     {
         // Kill the repo first if it exists
         if (Directory.Exists(repoDest))
@@ -92,7 +92,7 @@ public class TestRestic
         Directory.CreateDirectory("TestFiles");
         File.WriteAllText(Path.Join("TestFiles", "test1.txt"), "Hello World");
         
-        InitializeRestic();
+        await InitializeRestic();
 
         if (!await _restic.RepoExists(repoDest))
         {
@@ -101,10 +101,10 @@ public class TestRestic
 
         var repoExists = await _restic.RepoExists(repoDest);
         Assert.That(repoExists, Is.True);
-
+        
         DateTime firstBackupTime = DateTime.Now.AddMonths(-1);
         List<string> extraArgs = new() { "--time", firstBackupTime.ToString("yyyy-MM-dd HH:mm:ss") };
-
+        
         // Backup, but make it seem like it's a backup from a month ago
         var summary = await _restic.BackupFiles("TestFiles", repoDest, status =>
         {
@@ -113,7 +113,7 @@ public class TestRestic
         Assert.That(summary, Is.Not.Null);
         Assert.That(summary.FilesNew, Is.EqualTo(1));
         
-        // Make a change to the source
+        // // Make a change to the source
         File.WriteAllText(Path.Join("TestFiles", "test2.txt"), "Hello World");
         
         // Backup again
@@ -124,9 +124,16 @@ public class TestRestic
         Assert.That(summary2, Is.Not.Null);
         Assert.That(summary2.FilesNew, Is.EqualTo(1));
         
+        // List all snapshots, make sure there's the right number of them and that the oldest one is the right time
         List<Snapshot> snapshots = await _restic.ListSnapshots(repoDest);
         Assert.That(snapshots, Is.Not.Null);
         Assert.That(snapshots.Count, Is.EqualTo(2));
-        Assert.That(snapshots[0].Time, Is.EqualTo(firstBackupTime));
+        Assert.That(snapshots[0].Time, Is.EqualTo(firstBackupTime).Within(TimeSpan.FromSeconds(1)));
+        
+        // Now we want to run a forget command with a date policy
+        var response = await _restic.ForgetSnapshotWithDurationPolicy(repoDest, "20d");
+        Assert.That(response, Is.Not.Null);
+        Assert.That(response.Count, Is.EqualTo(1));
+        Assert.That(response[0].Remove.Count, Is.EqualTo(1)); // Make sure we forgot one snapshot
     }
 }
