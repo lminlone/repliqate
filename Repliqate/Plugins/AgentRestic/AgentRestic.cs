@@ -111,20 +111,23 @@ public class AgentRestic : IAgent
             string retentionPolicy = jobData.ContainerInfo.GetRetentionPolicy();
             if (retentionPolicy != string.Empty)
             {
+                _logger.LogInformation("Applying retention policy {Policy}", retentionPolicy);
+
+                int snapshotsRemovedCount = 0;
                 var forgetGroups = await restic.ForgetSnapshotWithDurationPolicy(backupDest, retentionPolicy);
                 foreach (var forgetGroup in forgetGroups)
                 {
                     if (forgetGroup.Remove == null || forgetGroup.Remove.Count == 0)
-                    {
-                        _logger.LogInformation("No snapshots to be removed");
                         continue;
-                    }
                     
                     foreach (var removedSnapshot in forgetGroup.Remove)
                     {
                         _logger.LogInformation("Removed snapshot {SnapshotId} from {Time}", removedSnapshot.Id, removedSnapshot.Time.ToString(Program.TimeStampFormat));
+                        snapshotsRemovedCount++;
                     }
                 }
+                
+                _logger.LogInformation("Removed {SnapshotsRemovedCount} snapshots via retention policy", snapshotsRemovedCount);
             }
         }
         
