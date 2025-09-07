@@ -12,37 +12,22 @@
     <img src="https://img.shields.io/docker/image-size/lminlone/repliqate">
 </p>
 
-Repliqate is a modular backup solution designed for Docker environments. It safely handles containerized workloads by stopping and restarting containers during backup operations, ensuring data consistency.
+<p align="center">
+    <a href="https://lminlone.github.io/repliqate/">
+        <img src="https://img.shields.io/badge/Documentation-blue">
+    </a>
+</p>
 
-Currently, Repliqate integrates with Restic as its backup engine, with planned support for additional providers in the future.
+Repliqate is a modular backup solution for Docker environments that ensures data consistency by managing container states during backup operations.
 
-# Features
+# Key Features
+- **Label-based config**: Configure via Docker container/volume labels.
+- **Container-safe**: Auto-manages container states during backups.
+- **Smart scheduling**: Supports both simple (`@daily 3am`) and cron expressions.
+- **Self-hostable**: Runs as a Docker container.
 
-- **Label-based configuration**: Configure backup rules using Docker container **and volume** labels, keeping configuration alongside the resources it protects.
-- **Self-hostable**: Deployable as a Docker container for integration into existing infrastructure.
-- **Container-safe**: Automatically stops and restarts containers around backup operations.
-- **Versioned backups**: Maintains version history of backups with configurable retention policies, allowing recovery from multiple points in time.
-- **Intuitive scheduling**: Simple, human-readable schedule configuration with convenient shortcuts like `@daily 3am` or `@weekly 4am Mon`, while still supporting traditional cron expressions for advanced use cases.
-
-
-# Running Repliqate
-## Prerequisites
-
-- Docker Engine 24.0 or later
-- Access to container runtime socket
-- Storage location for backup data
-
-## shell
-```shell
-docker run -d \
-  --name repliqate \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v /path/to/backups:/var/repliqate \
-  -v /var/lib/docker/volumes:/var/lib/docker/volumes \
-  lminlone/repliqate
-```
-
-## Docker Compose
+# Quick Start
+## Repliqate Container
 ```yml
 services:
   repliqate:
@@ -54,121 +39,19 @@ services:
       - /var/lib/docker/volumes:/var/lib/docker/volumes
 ```
 
-Or, if you wish to backup to an NFS:
-```yml
-services:
-  repliqate:
-    image: lminlone/repliqate
-    container_name: repliqate
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - backups:/var/repliqate
-      - /var/lib/docker/volumes:/var/lib/docker/volumes
-
-volumes:
-  backups:
-    driver: local
-    driver_opts:
-      type: nfs
-      o: addr=your-nas-hostname-or-ip,nolock,soft,rw
-      device: :/volume/backups
-```
-
-## Options, Volumes & Environment Variables
-### Volumes
-- `/var/run/docker.sock`: Required so Repliqate can read labels and control containers.
-- `/app/repliqate`: Storage for metadata and backup files.
-- `/var/lib/docker/volume`: Repliqate needs direct access to the volume data to be able to back it up. It's possible to give individual access to each volume directly to repliqate without exposing all your volumes: eg `/var/lib/docker/volume/my_volume_name:/var/lib/docker/volume/my_volume_name`. You'd need to do this per volume if this is the case. 
-
-### Environment Variable(s)
-| Variable           | Description                                                                                                           | Required | Default                |
-|--------------------|-----------------------------------------------------------------------------------------------------------------------|----------|------------------------|
-| `BACKUP_ROOT_PATH` | The directory in which the backups are placed.                                                                        | No       | `/var/repliqate`       |
-| `DOCKER_SOCK_PATH` | The Docker URI. Defaults to `/var/run/docker.sock`. Can contain `tcp://` connections if required but not recommended. | No       | `/var/run/docker.sock` |
-| `TZ`               | Sets the timezone of the container                                                                                    | No       | `UTC`                  |
-
-# Backup Configuration
-Repliqate uses Docker labels for configuration. This keeps backup policies close to the containers and volumes they apply to, eliminating the need for separate configuration files.
-
-## Container Labels
-| Label                    | Description                                                                                                                            | Default  | Example                                                                          |
-|--------------------------|----------------------------------------------------------------------------------------------------------------------------------------|----------|----------------------------------------------------------------------------------|
-| `repliqate.enabled`      | Enables backup for the container                                                                                                       | `false`  | `true`                                                                           |
-| `repliqate.engine`       | Backup engine selection                                                                                                                | `restic` | `restic`                                                                         |
-| `repliqate.schedule`     | Backup schedule (cron format)                                                                                                          | `none`   | `@daily 3am` (see [Scheduling](#scheduling) section)                             |
-| `repliqate.backup_id`    | Unique backup identifier for the container.<br/><br/>**NOTE**: Ensure this is fully unique across all containers on the docker server. | `none`   | `prod-db-01`                                                                     |
-| `repliqate.retention`    | Keep all snapshots taken within the specified time span (years, months, days, hours) before the latest snapshot.                       | `N/A`    | `2y5m7d3h` keeps snapshots from the last 2 years, 5 months, 7 days, and 3 hours. |
-
-## Volume Labels
-| Label                | Description                                   | Default   |
-|----------------------|-----------------------------------------------|-----------|
-| `repliqate.exclude`  | Exclude this volume from container backups.   | `false`   |
-
-## Examples
-Example 1 (Simple)
-```shell
-docker run -d \
-  --label repliqate.enabled=true \
-  --label repliqate.engine=restic \
-  --label repliqate.schedule="@daily 3am" \
-  --label repliqate.backup_id=my_app_01 \
-  --name my_app \
-  my_image:latest
-```
-
-Example 2 (A bit more complex)
+## Backup Container Configuration
 ```yml
 services:
   app:
     image: my-app:latest
-    volumes:
-      - data:/my-app/data
-      - uploads:/my-app/uploads
     labels:
       repliqate.enabled: 'true'
-      repliqate.schedule: "@daily 10:34"
-      repliqate.engine: restic
-      repliqate.backup_id: my_app
-
-volumes:
-  data:
-    labels:
-      repliqate.exclude: 'true' # Exclude from being backed up
-  uploads:
+      repliqate.schedule: "@daily 3am" # Trigger every day at 3 am
+      repliqate.backup_id: my_app_01
+      repliqate.retention: "30d" # Keep backups for 30 days
 ```
 
-# Scheduling
-Repliqate provides flexible scheduling options using a (half-custom) syntax while maintaining compatibility with "standard" cron expressions.
-
-## Shorthand Syntax
-### Frequency Options
-- `@daily <time>` - Run once per day.
-- `@weekly <time> <day of the week>` - Run once per week on this specific day.
-- `@monthly <time> <day of the month>` - Run once per month on this specific date.
-
-### Time Formats
-Supports both 12-hour and 24-hour time formats:
-- 12-hour: `3:00 PM`, `3PM`, `3:00pm`
-- 24-hour: `15:00`
-
-### Examples
-- `@monthly 9am 15`: Run on the 15th of every month at 9am.
-- `@weekly 4am Mon`: Run weekly on Mondays at 4am.
-- `@daily 23:59`: Run every day at 11:59pm.
-
-## Advanced Scheduling
-For more complex scheduling needs, Repliqate also accepts [Quartz cron expressions](http://www.cronmaker.com)
-
-### Examples
-- `0 0 19 1/1 * ? *`: Run every hour (not recommended) starting at 7pm.
-- `0 0 2 ? * MON-FRI *`: Run every weekday at 2am.
-
-# Roadmap
-- ☐ Support for additional backup engines (e.g., rclone, fully native solution, postgres DB dump, etc).
-- ☐ Modular plugins to allow custom backup engines.
-- ☐ Restoration options.
-- ☐ Frontend UI for advanced configurations and restoration.
-- ☐ Enhanced monitoring and logging options (such as for Grafana Loki or Graylog)
+Full documentation here: https://lminlone.github.io/repliqate/
 
 # Contributing
 Contributions are welcome. Please open an issue to discuss proposed changes before submitting a pull request.
