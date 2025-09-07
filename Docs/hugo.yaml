@@ -1,0 +1,29 @@
+baseURL: https://example.org/
+languageCode: en-us
+title: repliqate
+module:
+  imports:
+    - path: github.com/imfing/hextra
+markup:
+  goldmark:
+    renderer:
+      unsafe: true
+params:
+  page:
+    width:
+      wide
+enableInlineShortcodes: true
+menu:
+  main:
+    - name: Documentation
+      pageRef: /docs
+      weight: 1
+    - name: Search
+      weight: 4
+      params:
+        type: search
+    - name: GitHub
+      weight: 5
+      url: "https://github.com/lminlone/repliqate"
+      params:
+        icon: github
