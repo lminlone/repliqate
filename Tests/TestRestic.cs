@@ -140,5 +140,13 @@ public class TestRestic
         Assert.That(response2, Is.Not.Null);
         Assert.That(response2.Count, Is.EqualTo(1));
         Assert.That(response2[0].Remove, Is.Null);
+
+        bool errored = false;
+        var response3 = await _restic.ForgetSnapshotWithDurationPolicy(repoDest, "14", (err) =>
+        {
+            errored = true;
+        });
+        Assert.That(response3, Is.Not.Null);
+        Assert.That(errored, Is.True);
     }
 }

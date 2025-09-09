@@ -284,8 +284,10 @@ public class Restic
         return result;
     }
 
-    public async Task<List<ForgetGroup>> ForgetSnapshotWithDurationPolicy(string repoPath, string policy)
+    public async Task<List<ForgetGroup>> ForgetSnapshotWithDurationPolicy(string repoPath, string policy, Action<object?>? ErrorCallback = null)
     {
+        var errCallback = ErrorCallback ?? ReportError;
+        
         string repoPathAbs = Path.GetFullPath(repoPath);
         
         List<ForgetGroup> result = new();
@@ -297,7 +299,7 @@ public class Restic
             {
                 result = forgottenSnapshots;
             }
-        }, ReportError);
+        }, errCallback);
 
         return result;
     }

@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using ICSharpCode.SharpZipLib.BZip2;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Repliqate.Plugins.AgentRestic.CliResponseStructures;
 using Repliqate.Structs;
 
 namespace Repliqate.Plugins.AgentRestic;
@@ -113,21 +114,37 @@ public class AgentRestic : IAgent
             {
                 _logger.LogInformation("Applying retention policy {Policy}", retentionPolicy);
 
-                int snapshotsRemovedCount = 0;
-                var forgetGroups = await restic.ForgetSnapshotWithDurationPolicy(backupDest, retentionPolicy);
-                foreach (var forgetGroup in forgetGroups)
-                {
-                    if (forgetGroup.Remove == null || forgetGroup.Remove.Count == 0)
-                        continue;
-                    
-                    foreach (var removedSnapshot in forgetGroup.Remove)
-                    {
-                        _logger.LogInformation("Removed snapshot {SnapshotId} from {Time}", removedSnapshot.Id, removedSnapshot.Time.ToString(Program.TimeStampFormat));
-                        snapshotsRemovedCount++;
-                    }
-                }
+                bool forgetSuccess = true;
+                string policyParseError = "";
                 
-                _logger.LogInformation("Removed {SnapshotsRemovedCount} snapshots via retention policy", snapshotsRemovedCount);
+                int snapshotsRemovedCount = 0;
+                var forgetGroups = await restic.ForgetSnapshotWithDurationPolicy(backupDest, retentionPolicy, (err) =>
+                {
+                    forgetSuccess = false;
+                    if (err is Error error)
+                        policyParseError = error.Message;
+                });
+
+                if (forgetSuccess)
+                {
+                    foreach (var forgetGroup in forgetGroups)
+                    {
+                        if (forgetGroup.Remove == null || forgetGroup.Remove.Count == 0)
+                            continue;
+                    
+                        foreach (var removedSnapshot in forgetGroup.Remove)
+                        {
+                            _logger.LogInformation("Removed snapshot {SnapshotId} from {Time}", removedSnapshot.Id, removedSnapshot.Time.ToString(Program.TimeStampFormat));
+                            snapshotsRemovedCount++;
+                        }
+                    }
+                    
+                    _logger.LogInformation("Removed {SnapshotsRemovedCount} snapshots via retention policy", snapshotsRemovedCount);
+                }
+                else
+                {
+                    _logger.LogError("Failed to apply retention policy {Policy}: {Error}", retentionPolicy, policyParseError);
+                }
             }
         }
         
