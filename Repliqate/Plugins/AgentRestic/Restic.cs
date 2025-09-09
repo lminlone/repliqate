@@ -61,15 +61,7 @@ public class JsonParserMarshal : JsonParser
 
 public class JsonParserCmdResponseForgetGroup : JsonParserMarshal
 {
-    public JsonParserCmdResponseForgetGroup() : base(new()) {}
-    
-    public JsonParserCmdResponseForgetGroup(Dictionary<string, Type> parseDict) : base(parseDict)
-    {
-        parseDict = new()
-        {
-            { "exit_error", typeof(Error) },
-        };
-    }
+    public JsonParserCmdResponseForgetGroup() : base(new() { { "exit_error", typeof(Error) } }) {}
 
     public override object? ParseStdOut(string s)
     {
