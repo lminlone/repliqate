@@ -51,7 +51,7 @@ public class BackupJob : IJob
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "An error occurred during backup job for container {ContainerName}: {Exception}", containerName, e.Message);
+            _logger.LogError(e, "An error occurred during scheduled job for container {ContainerName}: {Exception}", containerName, e.Message);
         }
         
         _logger.LogInformation("Backup job finished for {ContainerName} (took {ElapsedMinutes}), next execution time: {Time}", containerName, context.JobRunTime.ToString(), context.NextFireTimeUtc.ToString());
@@ -97,21 +97,32 @@ public class BackupJob : IJob
 
     private async Task RunBackupTask(IJobExecutionContext context, BackupJobData jobData)
     {
-        _logger.LogInformation("Beginning backup for {ContainerName}", jobData.ContainerInfo.GetName());
+        string containerName = jobData.ContainerInfo.GetName();
+        
+        _logger.LogInformation("Beginning backup for {ContainerName}", containerName);
         
         string engine = jobData.ContainerInfo.GetRepliqateEngine();
         IAgent? agent = _agentProvider.GetAgentForMethod(engine);
         if (agent == null)
         {
-            _logger.LogError("No Repliqate method specified \"{RepliqateMethod}\" for container {ContainerName}, exiting job", engine, jobData.ContainerInfo.GetName());
+            _logger.LogError("No Repliqate method specified \"{RepliqateMethod}\" for container {ContainerName}, exiting job", engine, containerName);
             return;
         }
 
-        bool success = await agent.BeginBackup(jobData);
-        if (!success)
+        bool backupEngineSuccess = false;
+        try
         {
-            _logger.LogError("Failed to begin backup for container {ContainerName}, exiting job", jobData.ContainerInfo.GetName());
-            return;
+            backupEngineSuccess = await agent.BeginBackup(jobData);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "An uncaught error occurred during backup job for container {ContainerName} using the {EngineName} engine: {Exception}", containerName, agent.GetName(), e.Message);
+            backupEngineSuccess = false;
+        }
+
+        if (!backupEngineSuccess)
+        {
+            _logger.LogError("Failed to begin backup for container {ContainerName}", containerName);
         }
         
         // Once done, write some metadata about it in JSON so we can recognise it later
