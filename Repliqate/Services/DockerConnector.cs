@@ -115,14 +115,14 @@ public class DockerConnector : BackgroundService
         {
             case "destroy":
             {
-                _logger.LogInformation("Container {ContainerId} destroyed", message.Actor.ID);
+                _logger.LogDebug("Container {ContainerId} destroyed", message.Actor.ID);
                 
                 foreach (var container in _containers)
                 {
                     if (container.ID != message.Actor.ID)
                         continue;
                     
-                    _logger.LogInformation("Container {ContainerId} ({ContainerName}) removed", container.ID, container.GetName());
+                    _logger.LogDebug("Container {ContainerId} ({ContainerName}) removed", container.ID, container.GetName());
                     
                     OnContainerDestroyed?.Invoke(container);
                     _containers.Remove(container);
@@ -134,14 +134,14 @@ public class DockerConnector : BackgroundService
             }
             case "create":
             {
-                _logger.LogInformation("Container {ContainerId} created", message.Actor.ID);
+                _logger.LogDebug("Container {ContainerId} created", message.Actor.ID);
                 
                 var inspectData = await _client.Containers.InspectContainerAsync(message.Actor.ID);
                 var wrappedDockerContainer = new DockerContainer(inspectData);
                 await wrappedDockerContainer.DiscoverVolumes(this);
                 _containers.Add(wrappedDockerContainer);
                 
-                _logger.LogInformation("Container {ContainerId} ({ContainerName}) added", message.Actor.ID,  wrappedDockerContainer.Name);
+                _logger.LogDebug("Container {ContainerId} ({ContainerName}) added", message.Actor.ID,  wrappedDockerContainer.Name);
             
                 OnContainerCreated?.Invoke(_containers.Last());
                 
