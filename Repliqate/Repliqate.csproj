@@ -27,6 +27,12 @@
       <PackageReference Include="Docker.DotNet" Version="3.125.15" />
       <PackageReference Include="DotNetEnv" Version="3.1.1" />
       <PackageReference Include="Extensions.Hosting" Version="2.3.0" />
+      <PackageReference Include="Google.Protobuf" Version="3.32.0" />
+      <PackageReference Include="Grpc.Tools" Version="2.72.0">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="protobuf-net" Version="3.2.56" />
       <PackageReference Include="Quartz" Version="3.15.0" />
       <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.15.0" />
       <PackageReference Include="Serilog" Version="4.3.1-dev-02373" />
@@ -51,6 +57,11 @@
       <None Remove="Plugins\AgentRestic\Assets\restic_0.18.0_linux_arm64.bz2" />
       <None Remove="Plugins\AgentRestic\Assets\restic_0.18.0_windows_amd64.zip" />
       <None Remove="Plugins\AgentRestic\Assets\SHA256SUMS" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="CliProtoBuf\CliMessages.proto" />
+      <Protobuf Include="CliProtoBuf\CliMessages.proto" GrpcServices="None" />
     </ItemGroup>
 
 </Project>

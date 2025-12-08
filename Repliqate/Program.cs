@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Quartz;
+using Repliqate;
 using Repliqate.Services;
 using Serilog;
 using Serilog.Core;
@@ -14,11 +15,28 @@ class Program
     
     static async Task Main(string[] args)
     {
-        DotNetEnv.Env.Load();
-        
         Log.Logger = new LoggerConfiguration()
             .WriteTo.Console(outputTemplate: "[{Timestamp:" + TimeStampFormat + "} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
             .CreateBootstrapLogger();
+        
+        Mutex mutex = new System.Threading.Mutex(false, @"Global\RepliqateMutex");
+        try
+        {
+            if (mutex.WaitOne(0, false))
+            {
+                Log.Logger.Information("Service not running, starting service");
+                await RunService(args);
+            }
+        }
+        finally
+        {
+            await RunCli(args);
+        }
+    }
+
+    private static async Task RunService(string[] args)
+    {
+        DotNetEnv.Env.Load();
         
         Log.Information("Starting Repliqate {Version}", GetVersionString());
 
@@ -40,6 +58,7 @@ class Program
                 services.AddSingleton<DockerConnector>();
                 services.AddSingleton<ScheduleManager>();
                 services.AddSingleton<AgentProvider>();
+                services.AddSingleton<IpcCommsServer>();
                 services.AddHostedService(provider => provider.GetRequiredService<ScheduleManager>());
                 services.AddHostedService(provider => provider.GetRequiredService<DockerConnector>());
             })
@@ -77,10 +96,19 @@ class Program
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Log.Error(e.ToString());
         }
         
+        IpcCommsServer ipcCommsServer = host.Services.GetRequiredService<IpcCommsServer>();
+        ipcCommsServer.Start();
+
         await host.RunAsync();
+    }
+
+    private static async Task RunCli(string[] args)
+    {
+        IpcCommsClient ipcComms = new IpcCommsClient();
+        ipcComms.Connect();
     }
     
     private static string GetVersionString()
@@ -99,7 +127,7 @@ class Program
     {
         var assembly = Assembly.GetExecutingAssembly();
         var gitCommit = "unknown";
-        
+
         // Extract git commit from informational version if present
         var infoVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
         if (infoVersion != null && infoVersion.Contains('+'))

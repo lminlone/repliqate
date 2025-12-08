@@ -27,10 +27,4 @@
       <ProjectReference Include="..\Repliqate\Repliqate.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <None Update="TestFiles\TestFile1.txt">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-    </ItemGroup>
-
 </Project>
