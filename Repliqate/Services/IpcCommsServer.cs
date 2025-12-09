@@ -37,21 +37,23 @@ public class IpcCommsServer
         await using var pipe = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
         await pipe.WaitForConnectionAsync();
         _logger.LogDebug("Client connected");
-            
-        // Read the incoming message
-        var message = Envelope.Parser.ParseFrom(pipe);
-        
-        // Handle the message and send response
-        if (message.ReqVersion != null)
+
+        while (pipe.IsConnected)
         {
-            var response = new Envelope
+            // Read the incoming message
+            var message = Envelope.Parser.ParseDelimitedFrom(pipe);
+
+            // Handle the message and send response
+            if (message.ReqVersion != null)
             {
-                RespVersion = new RespVersion { Version = "1.0.0" } // Replace with actual version
-            };
-                
-            var output = new CodedOutputStream(pipe, leaveOpen: true);
-            response.WriteTo(output);
-            output.Flush();
+                var response = new Envelope
+                {
+                    RespVersion = new RespVersion { Version = "1.0.0" } // Replace with actual version
+                };
+
+                response.WriteDelimitedTo(pipe);
+                pipe.Flush();
+            }
         }
     }
 }

@@ -17,13 +17,10 @@ public class IpcCommsClient
             _pipe.Connect();
 
             var req = new Envelope { ReqVersion = new ReqVersion() };
-        
-            // Write without disposing the stream
-            var output = new CodedOutputStream(_pipe, leaveOpen: true);
-            req.WriteTo(output);
-            output.Flush();
+            req.WriteDelimitedTo(_pipe);
+            _pipe.Flush();
             
-            var resp = Envelope.Parser.ParseFrom(_pipe);
+            var resp = Envelope.Parser.ParseDelimitedFrom(_pipe);
             if (resp.RespVersion != null)
             {
                 Console.WriteLine("Repliqate version: " + resp.RespVersion.Version);
