@@ -26,11 +26,12 @@ This specific page is about running the repliqate container itself.
 
 ## Environment Variable(s)
 
-| Variable           | Description                                                       | Required | Default                |
-|--------------------|-------------------------------------------------------------------|----------|------------------------|
-| `BACKUP_ROOT_PATH` | The directory in which the backups are placed.                    | No       | `/var/repliqate`       |
-| `DOCKER_SOCK_PATH` | The Docker URI. Can contain `tcp://` URI connections if required. | No       | `/var/run/docker.sock` |
-| `TZ`               | Sets the timezone of the container                                | No       | `UTC`                  |
+| Variable           | Description                                                            | Required | Default                |
+|--------------------|------------------------------------------------------------------------|----------|------------------------|
+| `BACKUP_ROOT_PATH` | The directory in which the backups are placed.                         | No       | `/var/repliqate`       |
+| `DOCKER_SOCK_PATH` | The Docker URI. Can contain `tcp://` URI connections if required.      | No       | `/var/run/docker.sock` |
+| `TZ`               | Sets the timezone of the container                                     | No       | `UTC`                  |
+| `LOG_LEVEL`        | Minimum log level (Verbose, Debug, Information, Warning, Error, Fatal) | No       | `Information`          |
 
 ## Examples
 

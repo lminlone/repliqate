@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using Quartz;
 using Repliqate.Services;
 using Serilog;
+using Serilog.Core;
 using Serilog.Events;
 
 class Program
@@ -32,6 +33,8 @@ class Program
         }
         
         Log.Information("Starting Repliqate v{Version} (Commit: {GitCommit})", version, gitCommit);
+
+        LoggingLevelSwitch serilogLogLevel = new LoggingLevelSwitch(LogEventLevel.Information);
         
         using IHost host = Host.CreateDefaultBuilder(args)
             .ConfigureAppConfiguration((context, config) =>
@@ -52,19 +55,27 @@ class Program
                 services.AddHostedService(provider => provider.GetRequiredService<ScheduleManager>());
                 services.AddHostedService(provider => provider.GetRequiredService<DockerConnector>());
             })
-            .UseSerilog((context, services, loggerConfiguration) => 
+            .UseSerilog((context, services, loggerConfiguration) =>
             {
+                // Pull out the log level from environment variables, fall back to information if not available
+                string logLevel = context.Configuration["LOG_LEVEL"] ?? "Information";
+                serilogLogLevel = new LoggingLevelSwitch(
+                    Enum.TryParse<LogEventLevel>(logLevel, true, out var level) ? level : LogEventLevel.Information
+                );
+                
                 loggerConfiguration
                     .ReadFrom.Configuration(context.Configuration)
                     .ReadFrom.Services(services)
-                    .WriteTo.Console(outputTemplate: "[{Timestamp:" + TimeStampFormat + "} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
-                    .MinimumLevel.Information()
-                    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+                    .WriteTo.Console(outputTemplate: "[{Timestamp:" + TimeStampFormat +
+                                                     "} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
+                    .MinimumLevel.ControlledBy(serilogLogLevel)
                     .Enrich.FromLogContext();
             })
             .Build();
         
         IConfiguration appConfig = host.Services.GetRequiredService<IConfiguration>();
+        
+        Log.Information($"Log level: {serilogLogLevel.MinimumLevel}");
         
         // Ensure that we have a configured backup path
         string backupRootPath = appConfig.GetValue<string>("BACKUP_ROOT_PATH", string.Empty);
