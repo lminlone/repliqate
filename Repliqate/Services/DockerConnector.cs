@@ -16,7 +16,7 @@ public class DockerConnector : BackgroundService
     private readonly IConfiguration _appConfig;
     
     // An in-memory list of all containers, kept mostly up to date with Docker
-    private IList<DockerContainer> _containers;
+    private List<DockerContainer> _containers = new();
 
     public event Action<DockerContainer> OnContainerCreated;
     public event Action<DockerContainer> OnContainerDestroyed;
