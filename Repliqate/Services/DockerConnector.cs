@@ -55,8 +55,10 @@ public class DockerConnector : BackgroundService
             _logger.LogError(e, "Failed to connect to Docker daemon");
             throw;
         }
+
+        var dockerVersion = await _client.System.GetVersionAsync();
         
-        _logger.LogInformation("Connected to Docker daemon");
+        _logger.LogInformation($"Connected to Docker daemon (Docker v{dockerVersion.Version} | API v{dockerVersion.APIVersion})");
         
         // Compile a list of all containers on startup
         _containers = new List<DockerContainer>();
