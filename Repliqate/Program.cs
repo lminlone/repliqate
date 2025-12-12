@@ -1,10 +1,12 @@
 ﻿using System.Reflection;
+using GrpcDotNetNamedPipes;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Quartz;
 using Repliqate;
 using Repliqate.Services;
+using RepliqateProtos;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
@@ -12,6 +14,7 @@ using Serilog.Events;
 class Program
 {
     public static readonly string TimeStampFormat = "dd-MM-yyyy HH:mm:ss";
+    public static readonly string IpcSockPath = Path.Combine(Path.GetTempPath(), "repliqate.sock");
     
     static async Task Main(string[] args)
     {
@@ -58,7 +61,6 @@ class Program
                 services.AddSingleton<DockerConnector>();
                 services.AddSingleton<ScheduleManager>();
                 services.AddSingleton<AgentProvider>();
-                services.AddSingleton<IpcCommsServer>();
                 services.AddHostedService(provider => provider.GetRequiredService<ScheduleManager>());
                 services.AddHostedService(provider => provider.GetRequiredService<DockerConnector>());
             })
@@ -99,16 +101,18 @@ class Program
             Log.Error(e.ToString());
         }
         
-        IpcCommsServer ipcCommsServer = host.Services.GetRequiredService<IpcCommsServer>();
-        ipcCommsServer.Start();
-
+        var server = new NamedPipeServer("repliqate");
+        IpcService.BindService(server.ServiceBinder, new IpcServiceImpl());
+        server.Start();
+        Log.Information("IPC service started");
+        
         await host.RunAsync();
     }
 
     private static async Task RunCli(string[] args)
     {
         IpcCommsClient ipcComms = new IpcCommsClient();
-        ipcComms.Connect();
+        ipcComms.Start();
     }
     
     private static string GetVersionString()

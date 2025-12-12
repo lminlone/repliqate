@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option csharp_namespace = "RepliqateProtos";
+
+service IpcService {
+  rpc Ping (PingRequest) returns (PingReply);
+  rpc GetVersion (VersionRequest) returns (VersionReply);
+}
+
+message PingRequest {
+  string message = 1;
+}
+
+message PingReply {
+  string message = 1;
+}
+
+message VersionRequest {}
+
+message VersionReply {
+  string version = 1;
+}

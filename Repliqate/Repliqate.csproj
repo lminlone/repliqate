@@ -28,10 +28,13 @@
       <PackageReference Include="DotNetEnv" Version="3.1.1" />
       <PackageReference Include="Extensions.Hosting" Version="2.3.0" />
       <PackageReference Include="Google.Protobuf" Version="3.32.0" />
-      <PackageReference Include="Grpc.Tools" Version="2.72.0">
+      <PackageReference Include="Grpc.AspNetCore" Version="2.76.0-pre1" />
+      <PackageReference Include="Grpc.Core" Version="2.46.6" />
+      <PackageReference Include="Grpc.Tools" Version="2.76.0">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
+      <PackageReference Include="GrpcDotNetNamedPipes" Version="3.1.0" />
       <PackageReference Include="protobuf-net" Version="3.2.56" />
       <PackageReference Include="Quartz" Version="3.15.0" />
       <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.15.0" />
@@ -61,7 +64,8 @@
 
     <ItemGroup>
       <None Remove="CliProtoBuf\CliMessages.proto" />
-      <Protobuf Include="CliProtoBuf\CliMessages.proto" GrpcServices="None" />
+      <None Remove="CliProtoBuf\IPC.proto" />
+      <Protobuf Include="CliProtoBuf\IPC.proto" />
     </ItemGroup>
 
 </Project>

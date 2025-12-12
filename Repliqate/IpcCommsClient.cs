@@ -1,39 +1,17 @@
-using System.IO.Pipes;
-using Google.Protobuf;
-using ProtoBuf;
-using Repliqate.Services;
-using RepliqateCliPipe;
+using GrpcDotNetNamedPipes;
+using RepliqateProtos;
 
 namespace Repliqate;
 
 public class IpcCommsClient
 {
-    private readonly NamedPipeClientStream _pipe = new (".", IpcCommsServer.PipeName, PipeDirection.InOut);
-    
-    public void Connect()
+    public void Start()
     {
-        try
-        {
-            _pipe.Connect();
+        var channel = new NamedPipeChannel(".", "repliqate");
+        var client = new IpcService.IpcServiceClient(channel);
 
-            var req = new Envelope { ReqVersion = new ReqVersion() };
-            req.WriteDelimitedTo(_pipe);
-            _pipe.Flush();
-            
-            var resp = Envelope.Parser.ParseDelimitedFrom(_pipe);
-            if (resp.RespVersion != null)
-            {
-                Console.WriteLine("Repliqate version: " + resp.RespVersion.Version);
-            }
-        }
-        catch (IOException e)
-        {
-            Console.WriteLine(e.ToString());
-        }
-    }
-
-    public void SendMessage<TMessage, TResponse>(TMessage message)
-    {
+        VersionReply? response = client.GetVersion(new VersionRequest());
         
+        Console.WriteLine(response.Version);
     }
 }

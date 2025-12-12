@@ -1,59 +1,27 @@
-using System.IO.Pipes;
-using Google.Protobuf;
-using Microsoft.Extensions.Logging;
-using ProtoBuf;
-using RepliqateCliPipe;
+using Grpc.Core;
+using RepliqateProtos;
+using System.Threading.Tasks;
 
 namespace Repliqate.Services;
 
-public class IpcCommsServer
+public class IpcServiceImpl : IpcService.IpcServiceBase
 {
-    public static readonly string PipeName = "RepliqatePipe";
-        
-    ILogger<IpcCommsServer> _logger;
-    
-    public IpcCommsServer(ILogger<IpcCommsServer> logger)
+    public override Task<PingReply> Ping(PingRequest request, ServerCallContext context)
     {
-        _logger = logger;
-    }
-    
-    public void Start()
-    {
-        Task.Run(StartAsync);
-    }
-
-    private async Task StartAsync()
-    {
-        _logger.LogInformation("Starting IPC server");
-
-        while (true)
+        // Echo back the message
+        var reply = new PingReply
         {
-            await MainLoop();
-        }
+            Message = $"Pong: {request.Message}"
+        };
+        return Task.FromResult(reply);
     }
 
-    private async Task MainLoop()
+    public override Task<VersionReply> GetVersion(VersionRequest request, ServerCallContext context)
     {
-        await using var pipe = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
-        await pipe.WaitForConnectionAsync();
-        _logger.LogDebug("Client connected");
-
-        while (pipe.IsConnected)
+        var reply = new VersionReply
         {
-            // Read the incoming message
-            var message = Envelope.Parser.ParseDelimitedFrom(pipe);
-
-            // Handle the message and send response
-            if (message.ReqVersion != null)
-            {
-                var response = new Envelope
-                {
-                    RespVersion = new RespVersion { Version = "1.0.0" } // Replace with actual version
-                };
-
-                response.WriteDelimitedTo(pipe);
-                pipe.Flush();
-            }
-        }
+            Version = "1.0.0" // Replace with your version
+        };
+        return Task.FromResult(reply);
     }
 }
