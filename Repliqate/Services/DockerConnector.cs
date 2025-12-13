@@ -83,7 +83,8 @@ public class DockerConnector : BackgroundService
     protected async void ListenForContainerEvents()
     {
         // Listen to ALL events
-        // await _client.System.MonitorEventsAsync(new ContainerEventsParameters(), new Progress<Message>(m => _logger.LogInformation("Received event - Status: {Event} | Type: {Type}", m.Status, m.Type)));
+        // TODO: This might reduce perf, probably need to wrap this around something that's disabled by default
+        _ = _client.System.MonitorEventsAsync(new ContainerEventsParameters(), new Progress<Message>(OnDockerEvent));
         
         // Listen to container destroy and create events
         var eventParams = new ContainerEventsParameters()
@@ -108,7 +109,20 @@ public class DockerConnector : BackgroundService
         await _client.System.MonitorEventsAsync(eventParams, new Progress<Message>(OnContainerCreatedOrDestroyed));
         
         // If we reach here then something failed (like getting disconnected)
-        _logger.LogError("Something went wrong");
+        _logger.LogError("MonitorEventsAsync exited unexpectedly");
+    }
+
+    // Gets called for ALL docker events
+    protected async void OnDockerEvent(Message? message)
+    {
+        if (message?.Action == null)
+            return;
+        
+        // Filters out the spam, often it's necessary to increase the signal-to-noise ratio for debugging
+        if (message.Action.StartsWith("exec_"))
+            return;
+        
+        _logger.LogDebug("Received event - Action: {Action} | Type: {Type}", message.Action, message.Type);
     }
 
     protected async void OnContainerCreatedOrDestroyed(Message message)
