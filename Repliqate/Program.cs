@@ -81,9 +81,6 @@ class Program
         string backupRootPath = appConfig.GetValue<string>("BACKUP_ROOT_PATH", string.Empty);
         Log.Information("Backup root path set to {BackupRootPath}", backupRootPath);
         // Directory.CreateDirectory(backupRootPath);
-        
-        string dockerSocketPath = appConfig.GetValue<string>("DOCKER_SOCKET_PATH", string.Empty);
-        Log.Information("Docker socket path set to {DockerSocketPath}", dockerSocketPath);
 
         DockerConnector dockerConnector = host.Services.GetRequiredService<DockerConnector>();
         try

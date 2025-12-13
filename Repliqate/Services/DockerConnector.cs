@@ -43,7 +43,7 @@ public class DockerConnector : BackgroundService
 
     public async Task Initialize()
     {
-        _logger.LogInformation("Attempting to connect to Docker daemon at {DockerSockPath}", _config.EndpointBaseUri);
+        _logger.LogInformation("Attempting to connect to Docker daemon at {DockerSockPath}...", _config.EndpointBaseUri);
         
         try
         {
