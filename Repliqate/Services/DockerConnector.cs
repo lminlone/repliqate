@@ -57,13 +57,13 @@ public class DockerConnector : BackgroundService
         }
 
         var dockerVersion = await _client.System.GetVersionAsync();
-        
         _logger.LogInformation($"Connected to Docker daemon (Docker v{dockerVersion.Version} | API v{dockerVersion.APIVersion})");
         
         // Compile a list of all containers on startup
         _containers = new List<DockerContainer>();
         var listParams = new ContainersListParameters { All = true };
         var containerList = await _client.Containers.ListContainersAsync(listParams, CancellationToken.None);
+        _logger.LogInformation("Discovered {ContainerCount} containers on startup, executing internal late registrars", containerList.Count);
         foreach (var container in containerList)
         {
             var inspectData = await _client.Containers.InspectContainerAsync(container.ID);
@@ -74,8 +74,6 @@ public class DockerConnector : BackgroundService
             // Call create events per container found for late registrars
             OnContainerCreated?.Invoke(wrappedDockerContainer);
         }
-        
-        _logger.LogInformation("Discovered {ContainerCount} containers in total", _containers.Count);
         
         ListenForContainerEvents();
     }
@@ -106,10 +104,20 @@ public class DockerConnector : BackgroundService
                 }
             }
         };
-        await _client.System.MonitorEventsAsync(eventParams, new Progress<Message>(OnContainerCreatedOrDestroyed));
         
-        // If we reach here then something failed (like getting disconnected)
-        _logger.LogError("MonitorEventsAsync exited unexpectedly");
+        _logger.LogInformation("Listening for container create and destroy events");
+
+        try
+        {
+            await _client.System.MonitorEventsAsync(eventParams, new Progress<Message>(OnContainerCreatedOrDestroyed));
+        }
+        catch (Exception e)
+        {
+            // If we reach here then something failed (like getting disconnected)
+            _logger.LogError(e, "MonitorEventsAsync exited unexpectedly");    
+        }
+
+        _logger.LogInformation("Container event listener stopped");
     }
 
     // Gets called for ALL docker events
