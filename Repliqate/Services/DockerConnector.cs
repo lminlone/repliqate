@@ -135,7 +135,7 @@ public class DockerConnector : BackgroundService
 
     protected async void OnContainerCreatedOrDestroyed(Message message)
     {
-        switch (message.Status)
+        switch (message.Action)
         {
             case "destroy":
             {
@@ -169,6 +169,11 @@ public class DockerConnector : BackgroundService
             
                 OnContainerCreated?.Invoke(_containers.Last());
                 
+                break;
+            }
+            default:
+            {
+                _logger.LogWarning("Unknown event action {Action}", message.Action);
                 break;
             }
         }
