@@ -4,7 +4,11 @@ option csharp_namespace = "RepliqateProtos";
 
 service IpcService {
   rpc Ping (PingRequest) returns (PingReply);
+  rpc ConnectConfirm (ConnectConfirmRequest) returns (ConnectConfirmReply);
+  rpc DisconnectConfirm (DisconnectConfirmRequest) returns (DisconnectConfirmReply);
+  
   rpc GetVersion (VersionRequest) returns (VersionReply);
+  rpc GetDockerVersion (DockerVersionRequest) returns (DockerVersionReply);
 }
 
 message PingRequest {
@@ -15,8 +19,20 @@ message PingReply {
   string message = 1;
 }
 
+message ConnectConfirmRequest {}
+message ConnectConfirmReply {}
+
+message DisconnectConfirmRequest {}
+message DisconnectConfirmReply {}
+
 message VersionRequest {}
 
 message VersionReply {
   string version = 1;
+}
+
+message DockerVersionRequest {}
+message DockerVersionReply {
+  string version = 1;
+  string apiVersion = 2;
 }

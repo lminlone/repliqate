@@ -310,6 +310,13 @@ public class DockerConnector : BackgroundService
         return await _client.Volumes.InspectAsync(volumeId);
     }
 
+    public async Task<VersionResponse> GetVersionAsync()
+    {
+        await EnsureConnectedAsync();
+        
+        return await _client.System.GetVersionAsync();
+    }
+
     public override void Dispose()
     {
         _connectionLock.Dispose();

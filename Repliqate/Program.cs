@@ -33,7 +33,7 @@ class Program
         }
         finally
         {
-            await RunCli(args);
+            await RunClientCli(args);
         }
     }
 
@@ -63,6 +63,7 @@ class Program
                 services.AddSingleton<AgentProvider>();
                 services.AddHostedService(provider => provider.GetRequiredService<ScheduleManager>());
                 services.AddHostedService(provider => provider.GetRequiredService<DockerConnector>());
+                services.AddScoped<IpcServiceImpl>();
             })
             .UseSerilog((context, services, loggerConfiguration) =>
             {
@@ -101,21 +102,22 @@ class Program
             Log.Error(e.ToString());
         }
         
+        Log.Information("Starting IPC service for CLI C2");
         var server = new NamedPipeServer("repliqate");
-        IpcService.BindService(server.ServiceBinder, new IpcServiceImpl());
+        IpcService.BindService(server.ServiceBinder, host.Services.GetRequiredService<IpcServiceImpl>());
         server.Start();
         Log.Information("IPC service started");
         
         await host.RunAsync();
     }
 
-    private static async Task RunCli(string[] args)
+    private static async Task RunClientCli(string[] args)
     {
-        IpcCommsClient ipcComms = new IpcCommsClient();
-        ipcComms.Start();
+        RepliqateClientCli clientCli = new RepliqateClientCli();
+        clientCli.Start(args);
     }
     
-    private static string GetVersionString()
+    public static string GetVersionString()
     {
         // Get version and git commit info
         var assembly = Assembly.GetExecutingAssembly();
@@ -127,7 +129,7 @@ class Program
         return version;
     }
 
-    private static string GetGitCommit()
+    public static string GetGitCommit()
     {
         var assembly = Assembly.GetExecutingAssembly();
         var gitCommit = "unknown";
