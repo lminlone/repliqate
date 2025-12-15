@@ -13,6 +13,7 @@
         <SourceRevisionId>$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</SourceRevisionId>
         <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
         <IncludeSourceRevisionInInformationalVersion>true</IncludeSourceRevisionInInformationalVersion>
+        <InformationalVersion>v0.0.0</InformationalVersion>
     </PropertyGroup>
 
     <ItemGroup>

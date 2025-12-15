@@ -20,19 +20,7 @@ class Program
             .WriteTo.Console(outputTemplate: "[{Timestamp:" + TimeStampFormat + "} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
             .CreateBootstrapLogger();
         
-        // Get version and git commit info
-        var assembly = Assembly.GetExecutingAssembly();
-        var version = assembly.GetName().Version?.ToString(3) ?? "unknown";
-        var gitCommit = "unknown";
-        
-        // Extract git commit from informational version if present
-        var infoVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-        if (infoVersion != null && infoVersion.Contains('+'))
-        {
-            gitCommit = infoVersion.Split('+')[1];
-        }
-        
-        Log.Information("Starting Repliqate v{Version} (Commit: {GitCommit})", version, gitCommit);
+        Log.Information("Starting Repliqate {Version}", GetVersionString());
 
         LoggingLevelSwitch serilogLogLevel = new LoggingLevelSwitch(LogEventLevel.Information);
         
@@ -93,5 +81,32 @@ class Program
         }
         
         await host.RunAsync();
+    }
+    
+    private static string GetVersionString()
+    {
+        // Get version and git commit info
+        var assembly = Assembly.GetExecutingAssembly();
+        var version = Assembly
+            .GetExecutingAssembly()
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+            .InformationalVersion;
+
+        return version;
+    }
+
+    private static string GetGitCommit()
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        var gitCommit = "unknown";
+        
+        // Extract git commit from informational version if present
+        var infoVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        if (infoVersion != null && infoVersion.Contains('+'))
+        {
+            gitCommit = infoVersion.Split('+')[1];
+        }
+
+        return gitCommit;
     }
 }

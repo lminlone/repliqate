@@ -23,7 +23,7 @@ COPY ["Repliqate/Repliqate.csproj", "Repliqate/"]
 RUN dotnet restore "Repliqate/Repliqate.csproj"
 COPY . .
 WORKDIR "/src/Repliqate"
-RUN dotnet build "./Repliqate.csproj" -c $BUILD_CONFIGURATION -o /app/build /p:Version=$VERSION /p:SourceRevisionId=$GIT_COMMIT
+RUN dotnet build "./Repliqate.csproj" -c $BUILD_CONFIGURATION -o /app/build /p:InformationalVersion=$VERSION /p:SourceRevisionId=$GIT_COMMIT
 
 RUN echo "Directory contents:" && ls -la /src/Repliqate
 
@@ -39,7 +39,7 @@ FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 ARG VERSION=1.0.0
 ARG GIT_COMMIT=unknown
-RUN dotnet publish "./Repliqate.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false /p:Version=$VERSION /p:SourceRevisionId=$GIT_COMMIT
+RUN dotnet publish "./Repliqate.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false /p:InformationalVersion=$VERSION /p:SourceRevisionId=$GIT_COMMIT
 
 FROM mcr.microsoft.com/dotnet/runtime:9.0
 ARG ARCH=amd64
