@@ -43,6 +43,7 @@
       <PackageReference Include="Serilog.Settings.Configuration" Version="9.0.1-dev-02317" />
       <PackageReference Include="Serilog.Sinks.Console" Version="6.0.1-dev-00953" />
       <PackageReference Include="SharpZipLib" Version="1.4.2" />
+      <PackageReference Include="System.CommandLine" Version="2.0.1" />
     </ItemGroup>
 
     <ItemGroup>
