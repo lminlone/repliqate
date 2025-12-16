@@ -1,7 +1,10 @@
 using Grpc.Core;
 using RepliqateProtos;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Quartz;
+using Repliqate.Structs;
 
 namespace Repliqate.Services;
 
@@ -9,13 +12,17 @@ public class IpcServiceImpl : IpcService.IpcServiceBase
 {
     private readonly ILogger<IpcServiceImpl> _logger;
     private readonly DockerConnector _dockerConnector;
+    private readonly ScheduleManager _scheduleManager;
+    private readonly BackupJob _backupJob;
     
     private List<string> _peers = new();
 
-    public IpcServiceImpl(ILogger<IpcServiceImpl> logger, DockerConnector dockerConnector)
+    public IpcServiceImpl(ILogger<IpcServiceImpl> logger, DockerConnector dockerConnector, ScheduleManager scheduleManager, BackupJob backupJob)
     {
         _logger = logger;
         _dockerConnector = dockerConnector;
+        _scheduleManager = scheduleManager;
+        _backupJob = backupJob;
     }
 
     public override Task<PingReply> Ping(PingRequest request, ServerCallContext context)
@@ -62,5 +69,57 @@ public class IpcServiceImpl : IpcService.IpcServiceBase
             ApiVersion = versionInfo.Result.APIVersion
         };
         return Task.FromResult(reply);
+    }
+
+    public override async Task<BackupReply> Backup(BackupRequest request, ServerCallContext context)
+    {
+        var response = new BackupReply();
+        
+        _logger.LogInformation("Backup requested by IPC client {Peer}", context.Peer);
+        
+        var scheduler = _scheduleManager.GetScheduler();
+        
+        // Pause all scheduled jobs just to be safe, before we trigger a manual backup
+        _logger.LogInformation("Pausing all scheduled jobs");
+        await scheduler.PauseAll();
+        
+        // Container based backup trigger
+        var containerNameToBackup = request.ContainerName;
+        if (containerNameToBackup != "")
+        {
+            response = await BackupContainer(containerNameToBackup);
+        }
+        
+        _logger.LogInformation("Resuming all scheduled jobs");
+        await scheduler.ResumeAll();
+            
+        return await Task.FromResult(response);
+    }
+
+    private async Task<BackupReply> BackupContainer(string containerName)
+    {
+        DockerContainer? containerToBackup = null;
+        
+        // Figure out which container we are wanting to backup
+        var containers = _dockerConnector.GetContainers();
+        foreach (DockerContainer container in containers)
+        {
+            if (container.Name == containerName)
+            {
+                containerToBackup = container;
+            }
+        }
+
+        if (containerToBackup == null)
+        {
+            return new BackupReply();
+        }
+
+        _logger.LogInformation("Triggering backup manually for container {ContainerName}", containerName);
+            
+        BackupJobData jobData = _scheduleManager.GetJobData(containerToBackup.ID);
+        await _backupJob.RunBackupTask(jobData);
+
+        return new BackupReply();
     }
 }

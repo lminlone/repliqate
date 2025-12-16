@@ -9,6 +9,8 @@ service IpcService {
   
   rpc GetVersion (VersionRequest) returns (VersionReply);
   rpc GetDockerVersion (DockerVersionRequest) returns (DockerVersionReply);
+  
+  rpc Backup (BackupRequest) returns (BackupReply);
 }
 
 message PingRequest {
@@ -26,7 +28,6 @@ message DisconnectConfirmRequest {}
 message DisconnectConfirmReply {}
 
 message VersionRequest {}
-
 message VersionReply {
   string version = 1;
 }
@@ -36,3 +37,8 @@ message DockerVersionReply {
   string version = 1;
   string apiVersion = 2;
 }
+
+message BackupRequest {
+  string containerName = 1;
+}
+message BackupReply {}

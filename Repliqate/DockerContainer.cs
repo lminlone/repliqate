@@ -8,6 +8,8 @@ namespace Repliqate;
 /// </summary>
 public class DockerContainer
 {
+    public static readonly Dictionary<string, string> RepliqateFilter = new(){ { DockerContainer.RepliqateLabelEnabled, "true" } };
+    
     public const string RepliqateLabelPrefix     = "repliqate.";
     public const string RepliqateLabelBackupId   = RepliqateLabelPrefix + "backup_id";
     public const string RepliqateLabelEngine     = RepliqateLabelPrefix + "engine";

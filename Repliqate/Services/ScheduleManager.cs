@@ -56,46 +56,8 @@ public class BackupJob : IJob
         
         _logger.LogInformation("Backup job finished for {ContainerName} (took {ElapsedMinutes}), next execution time: {Time}", containerName, context.JobRunTime.ToString(), context.NextFireTimeUtc.ToString());
     }
-
-    private async Task InternalExecute(IJobExecutionContext context, BackupJobData jobData)
-    {
-        string containerName = jobData.ContainerInfo.GetName();
-        
-        _logger.LogInformation("Backup job started for {ContainerName}", containerName);
-
-        // If it is running then stop the container
-        if (await _dockerConnector.IsContainerRunning(jobData.ContainerInfo.ID))
-        {
-            _logger.LogInformation("Stopping container {ContainerName}", containerName);
-            bool stopSuccess = await _dockerConnector.StopContainer(jobData.ContainerInfo.ID);
-            if (stopSuccess)
-            {
-                _logger.LogInformation("Successfully stopped container {ContainerName}", containerName);
-            }
-            else
-            {
-                _logger.LogWarning("Failed to stop container {ContainerName}, exiting job", containerName);
-                return;
-            }
-        }
-        
-        _logger.LogInformation("Successfully stopped container {ContainerName}", containerName);
-
-        await RunBackupTask(context, jobData);
     
-        _logger.LogInformation("Starting container {ContainerName}", containerName);
-        bool startSuccess = await _dockerConnector.StartContainer(jobData.ContainerInfo.ID);
-        if (startSuccess)
-        {
-            _logger.LogInformation("Successfully started container {ContainerName}", containerName);
-        }
-        else
-        {
-            _logger.LogWarning("Failed to start container {ContainerName}, exiting job", containerName);
-        }
-    }
-
-    private async Task RunBackupTask(IJobExecutionContext context, BackupJobData jobData)
+    public async Task RunBackupTask(BackupJobData jobData)
     {
         string containerName = jobData.ContainerInfo.GetName();
         
@@ -139,12 +101,49 @@ public class BackupJob : IJob
         
         _logger.LogInformation("Backup completed for {ContainerName}", jobData.ContainerInfo.GetName());
     }
+
+    private async Task InternalExecute(IJobExecutionContext context, BackupJobData jobData)
+    {
+        string containerName = jobData.ContainerInfo.GetName();
+        
+        _logger.LogInformation("Backup job started for {ContainerName}", containerName);
+
+        // If it is running then stop the container
+        if (await _dockerConnector.IsContainerRunning(jobData.ContainerInfo.ID))
+        {
+            _logger.LogInformation("Stopping container {ContainerName}", containerName);
+            bool stopSuccess = await _dockerConnector.StopContainer(jobData.ContainerInfo.ID);
+            if (stopSuccess)
+            {
+                _logger.LogInformation("Successfully stopped container {ContainerName}", containerName);
+            }
+            else
+            {
+                _logger.LogWarning("Failed to stop container {ContainerName}, exiting job", containerName);
+                return;
+            }
+        }
+        
+        _logger.LogInformation("Successfully stopped container {ContainerName}", containerName);
+
+        await RunBackupTask(jobData);
+    
+        _logger.LogInformation("Starting container {ContainerName}", containerName);
+        bool startSuccess = await _dockerConnector.StartContainer(jobData.ContainerInfo.ID);
+        if (startSuccess)
+        {
+            _logger.LogInformation("Successfully started container {ContainerName}", containerName);
+        }
+        else
+        {
+            _logger.LogWarning("Failed to start container {ContainerName}, exiting job", containerName);
+        }
+    }
 }
 
 public class ScheduleManager : BackgroundService
 {
     private static readonly string BackupRootPath = "/var/repliqate";
-    private static readonly Dictionary<string, string> RepliqateFilter = new(){ { DockerContainer.RepliqateLabelEnabled, "true" } };
 
     private readonly ILogger<ScheduleManager> _logger;
     private readonly IServiceProvider _serviceProvider;
@@ -207,7 +206,7 @@ public class ScheduleManager : BackgroundService
         await _scheduler.Start(stoppingToken);
         
         // Fetch labels from all containers from docker and schedule the initial batch of jobs that are available
-        var containers = _dockerConnector.GetContainers(RepliqateFilter);
+        var containers = _dockerConnector.GetContainers(DockerContainer.RepliqateFilter);
         foreach (var container in containers)
         {
             await TryScheduleBackupJobForContainer<BackupJob>(container);
@@ -286,5 +285,10 @@ public class ScheduleManager : BackgroundService
         }
 
         _logger.LogInformation("Backup job assigned to {ContainerName} with the next execute time scheduled for {NextTime}", container.Name, nextExecuteTime?.ToLocalTime().ToString());
+    }
+
+    public IScheduler GetScheduler()
+    {
+        return _scheduler;
     }
 }
